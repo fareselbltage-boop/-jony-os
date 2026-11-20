@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard, Server, BarChart3, Shield, Ticket, Users,
   ClipboardList, Wallet, Settings, Bell, Search, ChevronDown,
   Activity, MessageSquare, Sparkles, Crown, Menu, X, Check,
-  SlidersHorizontal
+  SlidersHorizontal, ArrowUpRight, ShieldCheck, Zap, Lock, Bot,
+  ChevronRight
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer, CartesianGrid,
@@ -54,10 +54,334 @@ const systems = [
 
 function getAvatar(user) {
   if (!user?.avatar) return null;
-
   const extension = user.avatar.startsWith("a_") ? "gif" : "png";
-
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${extension}?size=128`;
+}
+
+function LandingPage({ onLogin }) {
+  const features = [
+    {
+      icon: ShieldCheck,
+      title: "Smart Moderation",
+      description: "Keep your community protected with powerful moderation tools and automated controls."
+    },
+    {
+      icon: Ticket,
+      title: "Ticket System",
+      description: "Organize support requests with a clean and professional ticket experience."
+    },
+    {
+      icon: Users,
+      title: "Community Management",
+      description: "Manage members, welcome new people and keep your server organized."
+    },
+    {
+      icon: BarChart3,
+      title: "Advanced Analytics",
+      description: "Understand your community with activity insights and useful statistics."
+    },
+    {
+      icon: Zap,
+      title: "Automation",
+      description: "Reduce repetitive work with systems designed to make server management easier."
+    },
+    {
+      icon: Lock,
+      title: "Secure Workspace",
+      description: "Access your dashboard through your Discord account with a secure sign-in flow."
+    }
+  ];
+
+  const systemCards = [
+    ["Moderation", "Control and protect your server.", Shield],
+    ["Ticket System", "Give members a better support experience.", Ticket],
+    ["Welcome System", "Make every new member feel welcome.", Users],
+    ["Activity Logs", "Keep track of important server events.", ClipboardList]
+  ];
+
+  const faqs = [
+    [
+      "What is JONY OS?",
+      "JONY OS is a dashboard concept for managing Discord communities and their bot systems from one place."
+    ],
+    [
+      "How do I sign in?",
+      "Use the Continue with Discord button. You will be redirected to Discord to authorize your account."
+    ],
+    [
+      "Can I manage multiple servers?",
+      "The dashboard is designed to support server management. Actual server controls will become available as the bot and API integrations are connected."
+    ],
+    [
+      "Are all dashboard statistics real?",
+      "Some values currently shown in the preview are demonstration data. Live statistics require the backend and Discord bot integration."
+    ],
+    [
+      "Is JONY OS available on mobile?",
+      "Yes. The landing page and dashboard layout are designed to adapt to mobile and tablet screens."
+    ]
+  ];
+
+  return (
+    <div className="landing">
+      <nav className="landing-nav">
+        <a className="landing-brand" href="#home">
+          <span className="landing-brand-icon"><Crown /></span>
+          <span>JONY <em>OS</em></span>
+        </a>
+
+        <div className="landing-nav-links">
+          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#systems">Systems</a>
+          <a href="#terms">Terms</a>
+          <a href="#faq">FAQ</a>
+        </div>
+
+        <button className="landing-login" onClick={onLogin}>
+          Login with Discord <ArrowUpRight size={16} />
+        </button>
+      </nav>
+
+      <section className="hero" id="home">
+        <div className="hero-glow hero-glow-one" />
+        <div className="hero-glow hero-glow-two" />
+
+        <div className="hero-content">
+          <div className="hero-badge">
+            <Sparkles size={14} />
+            THE NEXT GENERATION DISCORD PLATFORM
+          </div>
+
+          <h1>
+            Your server.
+            <br />
+            Your systems.
+            <br />
+            <span>One platform.</span>
+          </h1>
+
+          <p className="hero-description">
+            Take control of your Discord community with a powerful,
+            organized and modern management experience.
+          </p>
+
+          <div className="hero-actions">
+            <button className="hero-primary" onClick={onLogin}>
+              Continue with Discord <ArrowUpRight size={17} />
+            </button>
+            <a className="hero-secondary" href="#features">
+              Explore features <ChevronRight size={17} />
+            </a>
+          </div>
+
+          <div className="hero-trust">
+            <span><Check size={14} /> Easy to use</span>
+            <span><Check size={14} /> Modern dashboard</span>
+            <span><Check size={14} /> Built for communities</span>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="hero-orbit orbit-one" />
+          <div className="hero-orbit orbit-two" />
+
+          <div className="robot-card">
+            <div className="robot-crown"><Crown /></div>
+            <div className="robot-head">
+              <div className="robot-antenna" />
+              <div className="robot-face">
+                <span className="robot-eye" />
+                <span className="robot-eye" />
+                <span className="robot-mouth" />
+              </div>
+              <div className="robot-ear robot-ear-left" />
+              <div className="robot-ear robot-ear-right" />
+            </div>
+            <div className="robot-body">
+              <div className="robot-core"><Sparkles /></div>
+            </div>
+            <div className="robot-base" />
+          </div>
+
+          <div className="float-card float-card-top">
+            <span className="float-icon"><ShieldCheck /></span>
+            <div><b>Protection active</b><small>Systems operational</small></div>
+            <span className="float-dot" />
+          </div>
+
+          <div className="float-card float-card-bottom">
+            <span className="float-icon"><Activity /></span>
+            <div><b>Workspace status</b><small>All systems ready</small></div>
+            <span className="float-dot" />
+          </div>
+
+          <div className="hero-caption">POWERED BY JONY OS</div>
+        </div>
+
+        <a className="scroll-indicator" href="#features">
+          <span /> SCROLL TO EXPLORE
+        </a>
+      </section>
+
+      <section className="features-section landing-section" id="features">
+        <div className="section-heading">
+          <span className="section-kicker">BUILT FOR YOUR COMMUNITY</span>
+          <h2>Everything you need.<br /><span>All in one place.</span></h2>
+          <p>Powerful tools, organized into one simple workspace.</p>
+        </div>
+
+        <div className="feature-grid">
+          {features.map(({ icon: Icon, title, description }, index) => (
+            <article className="feature-card" key={title}>
+              <div className="feature-icon"><Icon /></div>
+              <span className="feature-number">0{index + 1}</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <div className="feature-card-line" />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="systems-section landing-section" id="systems">
+        <div className="systems-intro">
+          <div className="section-heading section-heading-left">
+            <span className="section-kicker">YOUR CONTROL CENTER</span>
+            <h2>Meet your new<br /><span>command center.</span></h2>
+            <p>
+              A clean workspace that brings your community tools together.
+              Spend less time switching between tools and more time building.
+            </p>
+            <button className="hero-primary" onClick={onLogin}>
+              Open your dashboard <ArrowUpRight size={17} />
+            </button>
+          </div>
+
+          <div className="dashboard-preview">
+            <div className="preview-topbar">
+              <div className="preview-dots"><i /><i /><i /></div>
+              <span>JONY OS / DASHBOARD</span>
+              <span className="preview-online">● ONLINE</span>
+            </div>
+            <div className="preview-layout">
+              <div className="preview-sidebar">
+                <div className="preview-logo"><Crown /></div>
+                <span className="preview-active"><LayoutDashboard /></span>
+                <span><Server /></span>
+                <span><BarChart3 /></span>
+                <span><Shield /></span>
+                <span><Ticket /></span>
+                <span><Settings /></span>
+              </div>
+              <div className="preview-main">
+                <div className="preview-welcome">
+                  <div><small>WORKSPACE / OVERVIEW</small><b>Welcome back!</b></div>
+                  <div className="preview-avatar">J</div>
+                </div>
+                <div className="preview-stats">
+                  <div><small>Servers</small><b>12</b><i>+12.8%</i></div>
+                  <div><small>Members</small><b>24.8K</b><i>+8.2%</i></div>
+                  <div><small>Uptime</small><b>99.9%</b><i>Stable</i></div>
+                </div>
+                <div className="preview-chart">
+                  <div><b>Server activity</b><small>Last 7 days</small></div>
+                  <div className="preview-bars">
+                    {[35, 54, 44, 75, 59, 92, 77, 100, 72, 86, 64, 91].map((height, i) => (
+                      <span key={i} style={{ height: `${height}%` }} />
+                    ))}
+                  </div>
+                </div>
+                <div className="preview-bottom">
+                  <div><span className="preview-status-dot" /> Moderation <small>Operational</small></div>
+                  <div><span className="preview-status-dot" /> Ticket System <small>Operational</small></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="system-showcase">
+          {systemCards.map(([title, description, Icon]) => (
+            <article className="showcase-card" key={title}>
+              <span><Icon /></span>
+              <div><b>{title}</b><p>{description}</p></div>
+              <ChevronRight />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="terms-section landing-section" id="terms">
+        <div className="section-heading">
+          <span className="section-kicker">PLEASE READ</span>
+          <h2>Terms & <span>Conditions.</span></h2>
+          <p>A few important things to know before using JONY OS.</p>
+        </div>
+
+        <div className="terms-grid">
+          <article className="terms-card">
+            <span>01</span>
+            <h3>Account Access</h3>
+            <p>You are responsible for keeping access to your Discord account secure. Sign-in is handled through Discord authorization.</p>
+          </article>
+          <article className="terms-card">
+            <span>02</span>
+            <h3>Acceptable Use</h3>
+            <p>Do not use the platform to violate Discord rules, disrupt communities, or interfere with the service.</p>
+          </article>
+          <article className="terms-card">
+            <span>03</span>
+            <h3>Service Availability</h3>
+            <p>Features may change as the platform develops. Availability of individual systems may depend on setup and integrations.</p>
+          </article>
+          <article className="terms-card">
+            <span>04</span>
+            <h3>Data & Privacy</h3>
+            <p>Discord account information is used to provide sign-in and identify your account. Do not share your account credentials.</p>
+          </article>
+        </div>
+        <p className="terms-note">By using JONY OS, you agree to use the platform responsibly and in accordance with applicable Discord policies.</p>
+      </section>
+
+      <section className="faq-section landing-section" id="faq">
+        <div className="section-heading">
+          <span className="section-kicker">GOT QUESTIONS?</span>
+          <h2>Frequently asked <span>questions.</span></h2>
+          <p>Quick answers to help you get started.</p>
+        </div>
+
+        <div className="faq-list">
+          {faqs.map(([question, answer]) => (
+            <details className="faq-item" key={question}>
+              <summary>{question}<ChevronDown /></summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-cta">
+        <div className="cta-glow" />
+        <div className="cta-icon"><Crown /></div>
+        <span className="section-kicker">READY WHEN YOU ARE</span>
+        <h2>Take control of<br /><span>your community.</span></h2>
+        <p>Your next chapter starts with one click.</p>
+        <button className="hero-primary" onClick={onLogin}>
+          Continue with Discord <ArrowUpRight size={17} />
+        </button>
+      </section>
+
+      <footer className="landing-footer">
+        <a className="landing-brand" href="#home">
+          <span className="landing-brand-icon"><Crown /></span>
+          <span>JONY <em>OS</em></span>
+        </a>
+        <p>Built for better communities.</p>
+        <span>© 2026 JONY OS. All rights reserved.</span>
+      </footer>
+    </div>
+  );
 }
 
 export default function App() {
@@ -94,6 +418,21 @@ export default function App() {
   const login = () => {
     window.location.href = "/api/auth/login";
   };
+
+  if (authLoading) {
+    return (
+      <div className="auth-loading">
+        <div className="loading-crown"><Crown /></div>
+        <h2>JONY <em>OS</em></h2>
+        <p>Preparing your experience...</p>
+        <div className="loading-line"><span /></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LandingPage onLogin={login} />;
+  }
 
   const avatar = getAvatar(user);
   const displayName = user?.global_name || user?.username || "Guest";
@@ -133,7 +472,6 @@ export default function App() {
         {groups.map(group => (
           <section className="nav-group" key={group.title}>
             <label>{group.title}</label>
-
             {group.links.map(([name, Icon]) => (
               <button
                 className={page === name ? "nav active" : "nav"}
@@ -160,12 +498,11 @@ export default function App() {
           {avatar ? (
             <img className="avatar" src={avatar} alt="Discord avatar" />
           ) : (
-            <div className="avatar">{user ? displayName[0]?.toUpperCase() : "J"}</div>
+            <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
           )}
-
           <div>
-            <b>{user ? displayName : "JONY Admin"}</b>
-            <small>{user ? "Discord Account" : "Administrator"}</small>
+            <b>{displayName}</b>
+            <small>Discord Account</small>
           </div>
         </div>
       </aside>
@@ -175,20 +512,15 @@ export default function App() {
           <button className="hamb" onClick={() => setMenu(true)}>
             <Menu />
           </button>
-
-          <div className="crumb">
-            Workspace　›　<b>{page}</b>
-          </div>
-
+          <div className="crumb">Workspace　›　<b>{page}</b></div>
           <div className="right">
             <span className="online">● All systems operational</span>
             <button className="round"><Search /></button>
             <button className="round"><Bell /></button>
-
             {avatar ? (
               <img className="avatar" src={avatar} alt="Discord avatar" />
             ) : (
-              <div className="avatar">J</div>
+              <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
             )}
           </div>
         </header>
@@ -197,22 +529,13 @@ export default function App() {
           <div className="heading">
             <div>
               <label>WORKSPACE / {page.toUpperCase()}</label>
-
-              <h1>
-                {page === "Dashboard"
-                  ? user
-                    ? `Welcome back, ${displayName} 👋`
-                    : "Welcome to JONY OS 👋"
-                  : page}
-              </h1>
-
+              <h1>{page === "Dashboard" ? `Welcome back, ${displayName} 👋` : page}</h1>
               <p>
                 {page === "Dashboard"
                   ? "Here's what's happening with your Discord bot today."
                   : `Manage and configure your ${page.toLowerCase()} workspace.`}
               </p>
             </div>
-
             <button className="primary" onClick={() => setPage("Systems")}>
               <Sparkles size={16} /> Customize dashboard
             </button>
@@ -236,13 +559,9 @@ export default function App() {
               <div className="grid">
                 <section className="panel chart">
                   <div className="panel-head">
-                    <div>
-                      <b>Server activity</b>
-                      <p>Member growth over the last 7 days</p>
-                    </div>
+                    <div><b>Server activity</b><p>Member growth over the last 7 days</p></div>
                     <button className="select">Last 7 days⌄</button>
                   </div>
-
                   <div className="chart-area">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={data}>
@@ -264,64 +583,38 @@ export default function App() {
 
                 <section className="panel">
                   <div className="panel-head">
-                    <div>
-                      <b>System status</b>
-                      <p>Your active modules</p>
-                    </div>
+                    <div><b>System status</b><p>Your active modules</p></div>
                     <span className="live">● LIVE</span>
                   </div>
-
                   {["Moderation", "Ticket System", "Welcome", "Auto Moderation", "Audit Logs"].map(item => (
                     <div className="status" key={item}>
-                      <span><Check size={13} /></span>
-                      {item}
-                      <small>Operational</small>
+                      <span><Check size={13} /></span>{item}<small>Operational</small>
                     </div>
                   ))}
-
-                  <button className="link" onClick={() => setPage("Systems")}>
-                    View all systems ↗
-                  </button>
+                  <button className="link" onClick={() => setPage("Systems")}>View all systems ↗</button>
                 </section>
               </div>
 
               <div className="grid lower">
                 <section className="panel">
                   <div className="panel-head">
-                    <div>
-                      <b>Your servers</b>
-                      <p>Recently connected Discord servers</p>
-                    </div>
-                    <button className="link" onClick={() => setPage("Servers")}>
-                      View all ↗
-                    </button>
+                    <div><b>Your servers</b><p>Recently connected Discord servers</p></div>
+                    <button className="link" onClick={() => setPage("Servers")}>View all ↗</button>
                   </div>
-
                   {[["GE", "Galaxy Empire", "8,420"], ["AW", "Anime World", "5,210"], ["GH", "Gaming Hub", "3,840"]].map(server => (
                     <div className="server-row" key={server[1]}>
                       <div className="server-logo">{server[0]}</div>
-                      <div>
-                        <b>{server[1]}</b>
-                        <small>{server[2]} members</small>
-                      </div>
+                      <div><b>{server[1]}</b><small>{server[2]} members</small></div>
                       <span>Connected</span>
                     </div>
                   ))}
                 </section>
 
                 <section className="panel">
-                  <div className="panel-head">
-                    <div>
-                      <b>Recent activity</b>
-                      <p>Latest workspace events</p>
-                    </div>
-                  </div>
-
+                  <div className="panel-head"><div><b>Recent activity</b><p>Latest workspace events</p></div></div>
                   {["Moderation action logged", "New ticket created", "Member joined the server"].map((item, i) => (
                     <div className="activity" key={item}>
-                      <span>
-                        {i === 0 ? <Shield /> : i === 1 ? <Ticket /> : <Users />}
-                      </span>
+                      <span>{i === 0 ? <Shield /> : i === 1 ? <Ticket /> : <Users />}</span>
                       <div>
                         <b>{item}</b>
                         <small>{["Galaxy Empire · 2 min ago", "Anime World · 18 min ago", "Gaming Hub · 42 min ago"][i]}</small>
@@ -347,15 +640,10 @@ export default function App() {
               <div className="toolbar">
                 <div className="search">
                   <Search size={16} />
-                  <input
-                    placeholder="Find a system..."
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                  />
+                  <input placeholder="Find a system..." value={query} onChange={e => setQuery(e.target.value)} />
                 </div>
                 <span className="live">{enabled.filter(Boolean).length} ACTIVE</span>
               </div>
-
               <div className="system-grid">
                 {systems.map(([name, desc, Icon], i) =>
                   name.toLowerCase().includes(query.toLowerCase()) && (
@@ -371,9 +659,7 @@ export default function App() {
                       <b>{name}</b>
                       <p>{desc}</p>
                       <div className="system-bottom">
-                        <small className={enabled[i] ? "green" : "muted"}>
-                          ● {enabled[i] ? "Enabled" : "Disabled"}
-                        </small>
+                        <small className={enabled[i] ? "green" : "muted"}>● {enabled[i] ? "Enabled" : "Disabled"}</small>
                         <button className="link">Configure ›</button>
                       </div>
                     </section>
@@ -386,47 +672,23 @@ export default function App() {
           {page === "Servers" && (
             <div className="panel placeholder">
               <Server />
-              <h2>{user ? "Your Discord account is connected" : "Connect your Discord account"}</h2>
-
-              <p>
-                {user
-                  ? `Signed in as ${displayName}. Your managed servers will appear here after we connect the server API.`
-                  : "Sign in with Discord to connect your account and prepare your server dashboard."}
-              </p>
-
-              {!user && (
-                <button className="primary" onClick={login} disabled={authLoading}>
-                  {authLoading ? "Checking login..." : "Connect Discord"}
-                </button>
-              )}
-
-              {user && (
-                <div style={{ marginTop: 20 }}>
-                  {avatar && (
-                    <img
-                      src={avatar}
-                      alt="Discord avatar"
-                      style={{ width: 64, height: 64, borderRadius: "50%" }}
-                    />
-                  )}
-                  <p>{user.username}</p>
-                </div>
-              )}
+              <h2>Your Discord account is connected</h2>
+              <p>Signed in as {displayName}. Your managed servers will appear here after we connect the server API.</p>
+              {avatar && <img src={avatar} alt="Discord avatar" style={{ width: 64, height: 64, borderRadius: "50%" }} />}
+              <p>{user.username}</p>
             </div>
           )}
 
           {page === "Analytics" && (
             <div className="panel placeholder">
-              <BarChart3 />
-              <h2>Analytics overview</h2>
+              <BarChart3 /><h2>Analytics overview</h2>
               <p>Charts will show real server activity after connecting the bot and database.</p>
             </div>
           )}
 
           {!["Dashboard", "Systems", "Servers", "Analytics"].includes(page) && (
             <div className="panel placeholder">
-              <Settings />
-              <h2>{page} settings</h2>
+              <Settings /><h2>{page} settings</h2>
               <p>This section is included in the dashboard layout. We'll connect its working controls in the next stage.</p>
             </div>
           )}
@@ -440,4 +702,4 @@ export default function App() {
       </main>
     </div>
   );
-}
+       }
