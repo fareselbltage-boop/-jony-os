@@ -1,705 +1,364 @@
-import React, { useState, useEffect } from "react";
-import {
-  LayoutDashboard, Server, BarChart3, Shield, Ticket, Users,
-  ClipboardList, Wallet, Settings, Bell, Search, ChevronDown,
-  Activity, MessageSquare, Sparkles, Crown, Menu, X, Check,
-  SlidersHorizontal, ArrowUpRight, ShieldCheck, Zap, Lock, Bot,
-  ChevronRight
-} from "lucide-react";
-import {
-  AreaChart, Area, ResponsiveContainer, CartesianGrid,
-  XAxis, YAxis, Tooltip
-} from "recharts";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-const data = [
-  { day: "Mon", members: 420 },
-  { day: "Tue", members: 610 },
-  { day: "Wed", members: 540 },
-  { day: "Thu", members: 890 },
-  { day: "Fri", members: 720 },
-  { day: "Sat", members: 1120 },
-  { day: "Sun", members: 980 }
-];
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:85px}
+body{margin:0;background:#090a14;color:#f4f3ff;font-family:Inter,Arial,sans-serif}
+button,a{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+.app{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:248px;background:#0d0e1b;border-right:1px solid #24253c;padding:22px 15px;display:flex;flex-direction:column;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;padding:0 7px 22px;border-bottom:1px solid #24253c}
+.brand-icon{width:39px;height:39px;border-radius:12px;background:linear-gradient(140deg,#9867ff,#5632b5);display:grid;place-items:center}
+.brand-icon svg{width:21px}
+.brand b{font-size:16px;letter-spacing:1px}
+.brand em{font-style:normal;color:#b49aff}
+.brand small,.workspace small,.user small{display:block;font-size:8px;color:#8185a1;letter-spacing:1px;margin-top:4px}
+.close{display:none}
+.workspace{display:flex;align-items:center;gap:9px;padding:10px;margin:17px 0 22px;background:#17182b;border:1px solid #292b46;border-radius:10px}
+.workspace>div:nth-child(2){flex:1}
+.workspace b,.user b{font-size:10px}
+.workspace small,.user small{letter-spacing:0}
+.server-logo,.avatar{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(140deg,#8657e8,#33216e);font-size:11px;font-weight:800}
+.nav-group{margin-bottom:21px}
+.nav-group label,.heading label{display:block;font-size:9px;letter-spacing:1.4px;color:#707592;font-weight:700;margin:0 9px 8px}
+.nav{width:100%;height:38px;border:0;background:none;color:#999db8;display:flex;align-items:center;gap:11px;padding:0 10px;border-radius:8px;font-size:11px;margin:2px 0;text-align:left}
+.nav svg{width:17px}
+.nav:hover,.nav.active{background:linear-gradient(90deg,#633bc2,#382276);color:white}
+.help{margin-top:auto;padding:13px;background:#19172e;border:1px solid #373052;border-radius:10px}
+.help b{font-size:11px}
+.help p{font-size:9px;line-height:1.6;color:#9295ad}
+.help span{font-size:9px;color:#b79cff}
+.user{border-top:1px solid #24253c;margin-top:13px;padding:14px 3px 0;display:flex;gap:9px;align-items:center}
+.user>div:nth-child(2){flex:1}
+main{margin-left:248px}
+header{height:66px;border-bottom:1px solid #22243a;background:#0c0d19;display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:3}
+.crumb{font-size:10px;color:#8387a2}
+.crumb b{color:#eee}
+.right{display:flex;align-items:center;gap:13px}
+.online,.live{font-size:9px;color:#61dba7;background:#12372e;border:1px solid #205d49;padding:7px 10px;border-radius:30px}
+.round{border:0;background:none;color:#9296b0}
+.avatar{border-radius:50%;border:2px solid #7951c8;object-fit:cover}
+.content{padding:32px;max-width:1450px;margin:auto}
+.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:24px}
+.heading label{margin:0 0 9px;color:#ad8cff}
+.heading h1{font-size:25px;margin:0 0 7px;letter-spacing:-.7px}
+.heading p,.panel-head p{font-size:11px;color:#8589a5;margin:0}
+.primary{display:flex;align-items:center;gap:8px;background:linear-gradient(110deg,#8150e4,#572bb4);border:1px solid #956cf0;border-radius:8px;padding:10px 13px;color:white;font-size:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:15px}
+.stat,.panel{background:linear-gradient(145deg,#15172a,#101221);border:1px solid #282a45;border-radius:12px}
+.stat{padding:15px;min-height:119px}
+.stat-top{display:flex;justify-content:space-between;align-items:center}
+.stat-icon{width:33px;height:33px;border-radius:9px;background:#30215a;color:#c1a4ff;display:grid;place-items:center}
+.stat-icon svg{width:17px}
+.stat-top small{color:#58dba2;font-size:9px}
+.stat strong{display:block;font-size:24px;margin-top:13px}
+.stat p{font-size:10px;color:#8589a5;margin:3px 0}
+.grid{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-bottom:14px}
+.panel{padding:17px}
+.panel-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:13px}
+.panel-head b{font-size:12px}
+.select{background:#191a2d;border:1px solid #30314d;border-radius:7px;padding:8px;color:#bbb;font-size:9px}
+.chart-area{height:220px}
+.live{font-size:9px;padding:5px 8px}
+.status{height:39px;border-bottom:1px solid #272941;display:flex;align-items:center;gap:9px;font-size:10px}
+.status>span{width:18px;height:18px;border-radius:50%;background:#124333;color:#59dfa9;display:grid;place-items:center}
+.status small{margin-left:auto;color:#5cdaa5;font-size:9px}
+.link{border:0;background:none;color:#b79cff;font-size:10px}
+.panel>.link{margin-top:13px}
+.lower{grid-template-columns:1.2fr 1fr}
+.server-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #272941}
+.server-row>div:nth-child(2){flex:1}
+.server-row b,.activity b{display:block;font-size:10px}
+.server-row small,.activity small{display:block;color:#8589a5;font-size:9px;margin-top:4px}
+.server-row>span{color:#59dba5;background:#12372e;border-radius:20px;padding:5px 8px;font-size:9px}
+.activity{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #272941}
+.activity>span{width:30px;height:30px;border-radius:9px;background:#30215a;color:#c1a4ff;display:grid;place-items:center}
+.activity svg{width:15px}
+.banner{display:flex;align-items:center;gap:13px;margin-top:15px;padding:15px;border:1px solid #4a3280;border-radius:11px;background:linear-gradient(100deg,#281b50,#17152e)}
+.banner>svg{color:#c9afff;width:25px}
+.banner div{flex:1}
+.banner b{font-size:11px}
+.banner p{font-size:9px;color:#aaa4c2;margin:5px 0 0}
+.banner button{background:#7048c5;border:1px solid #916be5;border-radius:7px;padding:8px 10px;color:white;font-size:9px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.search{display:flex;align-items:center;gap:8px;background:#15172a;border:1px solid #2b2d49;padding:9px 11px;border-radius:8px;color:#8589a5;width:min(340px,100%)}
+.search input{background:none;border:0;outline:0;color:white;font-size:10px;width:100%}
+.system-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.system{padding:16px}
+.system-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.system-icon{width:38px;height:38px;border-radius:10px;background:#30215a;color:#c1a4ff;display:grid;place-items:center}
+.system-icon svg{width:19px}
+.system-top input{accent-color:#8b5cf6;width:17px;height:17px}
+.system>b{font-size:12px}
+.system p{font-size:10px;color:#8589a5;line-height:1.5;min-height:30px}
+.system-bottom{border-top:1px solid #292b45;padding-top:11px;display:flex;justify-content:space-between;align-items:center}
+.system-bottom small{font-size:9px}
+.green{color:#59dba5}
+.muted{color:#8589a5}
+.placeholder{text-align:center;padding:65px 20px}
+.placeholder>svg{color:#b99bff;width:35px;height:35px}
+.placeholder h2{font-size:16px}
+.placeholder p{font-size:11px;color:#8589a5;max-width:420px;margin:0 auto 18px}
+footer{display:flex;gap:8px;border-top:1px solid #22243a;margin-top:28px;padding:16px 0;color:#777b96;font-size:9px}
+footer span{color:#555a73}
+footer small{margin-left:auto;letter-spacing:1px}
+.hamb,.scrim{display:none}
 
-const groups = [
-  {
-    title: "OVERVIEW",
-    links: [["Dashboard", LayoutDashboard], ["Servers", Server], ["Analytics", BarChart3]]
-  },
-  {
-    title: "MANAGEMENT",
-    links: [
-      ["Systems", SlidersHorizontal],
-      ["Moderation", Shield],
-      ["Tickets", Ticket],
-      ["Welcome", Users],
-      ["Logs", ClipboardList],
-      ["Economy", Wallet]
-    ]
-  },
-  {
-    title: "PREFERENCES",
-    links: [["Settings", Settings]]
-  }
-];
+/* AUTH LOADING */
+.auth-loading{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#211744 0%,#0b0b18 55%,#080912 100%);text-align:center}
+.loading-crown{width:68px;height:68px;border:1px solid #7450bb;background:#21183c;border-radius:20px;display:grid;place-items:center;color:#c7a9ff;box-shadow:0 0 55px #8555e855}
+.loading-crown svg{width:32px;height:32px}
+.auth-loading h2{font-size:27px;letter-spacing:3px;margin:22px 0 8px}
+.auth-loading h2 em{font-style:normal;color:#b69aff}
+.auth-loading p{font-size:12px;color:#8585a4}
+.loading-line{height:3px;width:130px;background:#29203f;border-radius:5px;overflow:hidden;margin-top:20px}
+.loading-line span{display:block;width:45%;height:100%;background:#a887ff;border-radius:5px;animation:loadingMove 1.3s infinite ease-in-out}
+@keyframes loadingMove{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
 
-const systems = [
-  ["Moderation", "Protect your community with moderation tools.", Shield, true],
-  ["Ticket System", "Private support channels for your members.", Ticket, true],
-  ["Welcome", "Custom greetings for new members.", Users, true],
-  ["Auto Moderation", "Automatically catch spam and unwanted links.", Shield, false],
-  ["Leveling", "Reward members for being active.", Activity, false],
-  ["Suggestions", "Collect and vote on community ideas.", MessageSquare, true]
-];
+/* JONY OS LANDING PAGE */
+.landing{--purple:#9b75ff;--purple-light:#c4aaff;--muted:#9694b1;--line:rgba(164,139,231,.16);background:#090914;color:#f5f2ff;overflow:hidden}
+.landing-nav{height:78px;max-width:1320px;margin:auto;padding:0 38px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;border-bottom:1px solid rgba(255,255,255,.055)}
+.landing-brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:19px;letter-spacing:1.5px;white-space:nowrap}
+.landing-brand>span:last-child em{font-style:normal;color:#b69aff}
+.landing-brand-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#a17aff,#5835b0);display:grid;place-items:center;box-shadow:0 5px 24px #8254d944}
+.landing-brand-icon svg{width:21px;height:21px;color:white}
+.landing-nav-links{display:flex;align-items:center;gap:34px}
+.landing-nav-links a{font-size:11px;font-weight:600;color:#a5a2bb;transition:.2s}
+.landing-nav-links a:hover{color:#d2c0ff}
+.landing-login{display:flex;align-items:center;gap:9px;border:1px solid #7655bd;background:#201638;color:#e9ddff;padding:11px 15px;border-radius:9px;font-size:10px;font-weight:700;transition:.2s}
+.landing-login:hover{background:#39245f;border-color:#a486f0;transform:translateY(-2px)}
+.hero{min-height:690px;max-width:1320px;margin:auto;padding:100px 70px 95px;display:grid;grid-template-columns:1fr 1fr;align-items:center;position:relative}
+.hero-content{position:relative;z-index:2;max-width:570px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #644a9c;border-radius:30px;background:#201638;color:#c6adff;font-size:9px;font-weight:800;letter-spacing:1.2px}
+.hero-badge svg{color:#d1baff}
+.hero h1{font-size:clamp(48px,6vw,76px);line-height:1.06;letter-spacing:-4px;margin:27px 0 20px;font-weight:900}
+.hero h1 span,.section-heading h2 span,.systems-intro h2 span,.landing-cta h2 span{background:linear-gradient(100deg,#cbb8ff 5%,#9368ed 55%,#7043c6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-description{font-size:14px;line-height:1.9;color:#a09db8;max-width:450px;margin:0}
+.hero-actions{display:flex;align-items:center;gap:24px;margin-top:32px;flex-wrap:wrap}
+.hero-primary{display:inline-flex;align-items:center;justify-content:center;gap:11px;background:linear-gradient(110deg,#9869f3,#6038bd);border:1px solid #ad8bff;border-radius:9px;padding:14px 19px;color:white;font-size:11px;font-weight:800;box-shadow:0 8px 28px #7447c344;transition:.2s}
+.hero-primary:hover{transform:translateY(-3px);box-shadow:0 12px 35px #8958ed66}
+.hero-secondary{display:inline-flex;align-items:center;gap:6px;color:#c5b4ed;font-size:11px;font-weight:700}
+.hero-secondary:hover{color:white}
+.hero-trust{display:flex;gap:19px;flex-wrap:wrap;margin-top:35px}
+.hero-trust span{display:flex;align-items:center;gap:6px;font-size:9px;color:#85829e}
+.hero-trust svg{color:#8e6cda}
+.hero-visual{height:480px;position:relative;display:flex;align-items:center;justify-content:center}
+.hero-glow{position:absolute;pointer-events:none;border-radius:50%;filter:blur(2px)}
+.hero-glow-one{width:500px;height:500px;right:-100px;top:40px;background:radial-gradient(circle,#6237ae30 0%,#321b6120 40%,transparent 70%)}
+.hero-glow-two{width:270px;height:270px;left:5%;bottom:0;background:radial-gradient(circle,#8b56df22,transparent 70%)}
+.hero-orbit{position:absolute;border:1px solid #9568e62b;border-radius:50%;transform:rotate(-20deg)}
+.orbit-one{width:420px;height:230px}
+.orbit-two{width:500px;height:310px;transform:rotate(35deg)}
+.robot-card{width:270px;height:360px;position:relative;display:flex;align-items:center;flex-direction:column;justify-content:center;filter:drop-shadow(0 15px 40px #7c4bd555);z-index:2}
+.robot-crown{position:absolute;top:0;z-index:4;color:#e1c8ff;filter:drop-shadow(0 0 14px #a779ff)}
+.robot-crown svg{width:60px;height:60px;stroke-width:1.6}
+.robot-head{width:205px;height:175px;position:relative;margin-top:32px;border-radius:55px 55px 43px 43px;background:linear-gradient(145deg,#e7e3ff 0%,#aaa2d4 35%,#665a99 100%);border:3px solid #d2c2ff;box-shadow:inset -12px -13px 25px #39305f,0 0 35px #9465ed88}
+.robot-antenna{position:absolute;width:8px;height:25px;background:#bda1ff;top:-26px;left:50%;transform:translateX(-50%);border-radius:8px}
+.robot-antenna:before{content:"";position:absolute;width:13px;height:13px;top:-8px;left:-2.5px;border-radius:50%;background:#d5bdff;box-shadow:0 0 17px #b78bff}
+.robot-face{position:absolute;inset:38px 25px 27px;border-radius:34px;background:linear-gradient(145deg,#1a1731,#090b1a);border:2px solid #b69aff;display:flex;align-items:center;justify-content:center;gap:30px;box-shadow:inset 0 0 25px #6540a833}
+.robot-eye{width:20px;height:27px;border-radius:50%;background:#bda1ff;box-shadow:0 0 15px #a77cff,0 0 28px #8456e9}
+.robot-mouth{position:absolute;bottom:19px;width:27px;height:5px;border-radius:5px;background:#9d79eb;box-shadow:0 0 10px #9d79eb}
+.robot-ear{position:absolute;top:65px;width:17px;height:49px;border-radius:8px;background:linear-gradient(180deg,#bda5ff,#69549e);border:2px solid #d6c6ff}
+.robot-ear-left{left:-17px}
+.robot-ear-right{right:-17px}
+.robot-body{width:150px;height:115px;margin-top:12px;border-radius:35px 35px 23px 23px;background:linear-gradient(145deg,#d7d0f4,#8176b0 65%,#4b416e);border:3px solid #c5b3ff;box-shadow:inset -10px -10px 20px #38305d;display:grid;place-items:center}
+.robot-core{width:55px;height:55px;border-radius:18px;background:linear-gradient(145deg,#4c327f,#1b1633);border:1px solid #b18aff;display:grid;place-items:center;color:#d6bdff;box-shadow:0 0 25px #a16bff77}
+.robot-core svg{width:27px;height:27px}
+.robot-base{width:120px;height:12px;border-radius:50%;background:#8e65dc55;filter:blur(8px);margin-top:10px}
+.float-card{position:absolute;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:linear-gradient(145deg,#211b37ed,#111322ed);border:1px solid #6d529c66;box-shadow:0 12px 35px #0005;backdrop-filter:blur(12px)}
+.float-card-top{top:90px;right:-3px}
+.float-card-bottom{bottom:75px;left:-20px}
+.float-icon{width:35px;height:35px;border-radius:10px;background:#493078;color:#d0baff;display:grid;place-items:center}
+.float-icon svg{width:18px}
+.float-card b{display:block;font-size:10px}
+.float-card small{display:block;margin-top:4px;color:#9691ad;font-size:8px}
+.float-dot{width:7px;height:7px;border-radius:50%;background:#58dda7;box-shadow:0 0 10px #58dda7}
+.hero-caption{position:absolute;bottom:22px;right:30px;font-size:8px;letter-spacing:3px;color:#70638f}
+.scroll-indicator{position:absolute;bottom:27px;left:70px;display:flex;align-items:center;gap:10px;font-size:8px;letter-spacing:2px;color:#77728f}
+.scroll-indicator span{width:28px;height:1px;background:#9b79db}
+.landing-section{max-width:1200px;margin:0 auto;padding:110px 35px}
+.features-section{border-top:1px solid #ffffff0b}
+.section-heading{text-align:center;margin:0 auto 52px;max-width:620px}
+.section-kicker{display:inline-block;color:#b89aff;font-size:9px;font-weight:800;letter-spacing:2px}
+.section-heading h2,.systems-intro h2,.landing-cta h2{font-size:clamp(34px,4vw,48px);line-height:1.15;letter-spacing:-1.8px;margin:16px 0}
+.section-heading p,.systems-intro p,.landing-cta p{font-size:12px;color:#9692ad;line-height:1.8;margin:0}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.feature-card{min-height:225px;position:relative;padding:25px 23px;background:linear-gradient(145deg,#171629,#10111f);border:1px solid #302849;border-radius:14px;overflow:hidden;transition:.25s}
+.feature-card:hover{transform:translateY(-5px);border-color:#7654b6;box-shadow:0 15px 35px #0003}
+.feature-icon{width:43px;height:43px;border-radius:12px;background:linear-gradient(145deg,#483071,#251d40);border:1px solid #684c9c;color:#c8b0ff;display:grid;place-items:center}
+.feature-icon svg{width:21px;height:21px}
+.feature-number{position:absolute;right:22px;top:25px;color:#55446f;font-size:11px;font-weight:800;letter-spacing:1px}
+.feature-card h3{font-size:14px;margin:21px 0 9px}
+.feature-card p{font-size:10px;line-height:1.8;color:#918da8;margin:0;max-width:280px}
+.feature-card-line{position:absolute;bottom:0;left:0;width:35%;height:2px;background:linear-gradient(90deg,#9b70ed,transparent);opacity:.8}
+.systems-section{border-top:1px solid #ffffff0b}
+.systems-intro{display:grid;grid-template-columns:.85fr 1.15fr;gap:70px;align-items:center}
+.section-heading-left{text-align:left;margin:0}
+.systems-intro h2{margin:17px 0}
+.systems-intro p{max-width:390px;margin-bottom:24px}
+.dashboard-preview{padding:12px;background:#111222;border:1px solid #48366a;border-radius:15px;box-shadow:0 25px 75px #0007,0 0 50px #6e42ad1a;transform:perspective(1000px) rotateY(-5deg)}
+.preview-topbar{height:29px;display:flex;align-items:center;gap:12px;padding:0 7px;color:#8984a3;font-size:7px;letter-spacing:1px}
+.preview-dots{display:flex;gap:4px}
+.preview-dots i{width:6px;height:6px;border-radius:50%;background:#71559b}
+.preview-dots i:nth-child(2){background:#57467a}
+.preview-dots i:nth-child(3){background:#3e385a}
+.preview-online{margin-left:auto;color:#5cdaa5;font-size:7px}
+.preview-layout{display:flex;min-height:270px;border-radius:8px;overflow:hidden;background:#0c0e1b}
+.preview-sidebar{width:48px;flex-shrink:0;background:#121324;border-right:1px solid #28253c;display:flex;align-items:center;flex-direction:column;gap:14px;padding:12px 0}
+.preview-sidebar>span{width:25px;height:25px;display:grid;place-items:center;color:#716b8c;border-radius:6px}
+.preview-sidebar>span svg{width:13px;height:13px}
+.preview-sidebar .preview-active{background:#53358e;color:#e0d0ff}
+.preview-logo{width:25px;height:25px;border-radius:7px;background:#7951c6;color:white;display:grid;place-items:center;margin-bottom:5px}
+.preview-logo svg{width:14px}
+.preview-main{flex:1;padding:17px;min-width:0}
+.preview-welcome{display:flex;align-items:center;justify-content:space-between}
+.preview-welcome small{display:block;color:#8e87a7;font-size:7px;letter-spacing:1px}
+.preview-welcome b{display:block;margin-top:7px;font-size:14px}
+.preview-avatar{width:25px;height:25px;border-radius:50%;background:linear-gradient(145deg,#a57bf4,#5534a1);display:grid;place-items:center;font-size:9px;font-weight:800}
+.preview-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:17px}
+.preview-stats>div{padding:10px 8px;background:#17182a;border:1px solid #2b2942;border-radius:7px}
+.preview-stats small{display:block;color:#8c87a3;font-size:7px}
+.preview-stats b{display:block;font-size:15px;margin-top:6px}
+.preview-stats i{display:block;font-style:normal;color:#5cdaa5;font-size:7px;margin-top:4px}
+.preview-chart{margin-top:10px;padding:11px;background:#17182a;border:1px solid #2b2942;border-radius:7px}
+.preview-chart>div:first-child{display:flex;justify-content:space-between;align-items:center}
+.preview-chart b{font-size:8px}
+.preview-chart small{font-size:7px;color:#8c87a3}
+.preview-bars{height:72px;display:flex;align-items:end;gap:7px;padding:9px 3px 0}
+.preview-bars span{flex:1;min-width:3px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#b18aff,#5737a4);opacity:.9}
+.preview-bottom{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.preview-bottom>div{padding:9px;background:#17182a;border:1px solid #2b2942;border-radius:6px;font-size:7px}
+.preview-status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#5cdaa5;margin-right:5px}
+.preview-bottom small{display:block;color:#5cdaa5;margin:5px 0 0 12px;font-size:6px}
+.system-showcase{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:65px}
+.showcase-card{display:flex;align-items:center;gap:10px;padding:15px 12px;border:1px solid #302849;background:#141424;border-radius:11px;min-width:0}
+.showcase-card>span{width:34px;height:34px;flex-shrink:0;border-radius:9px;background:#39265c;color:#c4aaff;display:grid;place-items:center}
+.showcase-card>span svg{width:17px}
+.showcase-card>div{flex:1;min-width:0}
+.showcase-card b{font-size:9px}
+.showcase-card p{font-size:8px;line-height:1.5;color:#8985a0;margin:4px 0 0}
+.showcase-card>svg{width:13px;color:#75658f;flex-shrink:0}
+.terms-section{border-top:1px solid #ffffff0b}
+.terms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.terms-card{padding:23px;background:linear-gradient(145deg,#171629,#10111f);border:1px solid #302849;border-radius:12px}
+.terms-card>span{font-size:10px;color:#a98aff;font-weight:800;letter-spacing:1px}
+.terms-card h3{font-size:13px;margin:15px 0 8px}
+.terms-card p{font-size:10px;color:#9792ad;line-height:1.8;margin:0}
+.terms-note{font-size:9px;color:#77738e;text-align:center;line-height:1.8;margin:23px auto 0;max-width:700px}
+.faq-section{border-top:1px solid #ffffff0b}
+.faq-list{max-width:800px;margin:auto}
+.faq-item{border:1px solid #302849;background:#141424;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.faq-item summary{cursor:pointer;list-style:none;padding:19px 20px;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary svg{width:16px;height:16px;color:#b69aff;transition:transform .2s}
+.faq-item[open] summary svg{transform:rotate(180deg)}
+.faq-item p{padding:0 20px 19px;margin:0;color:#9691ad;font-size:10px;line-height:1.8;max-width:700px}
+.landing-cta{position:relative;max-width:1120px;margin:20px auto 100px;padding:65px 25px;text-align:center;border:1px solid #5d4389;border-radius:18px;background:linear-gradient(120deg,#21183a,#17142b 55%,#261941);overflow:hidden}
+.cta-glow{position:absolute;width:500px;height:300px;left:50%;top:-180px;transform:translateX(-50%);background:#9b68ed44;filter:blur(80px);border-radius:50%}
+.cta-icon{width:55px;height:55px;margin:0 auto 20px;border:1px solid #8867c4;background:#493071;border-radius:16px;display:grid;place-items:center;color:#e0caff;position:relative}
+.cta-icon svg{width:27px;height:27px}
+.landing-cta h2{position:relative;margin:14px 0}
+.landing-cta p{position:relative;margin-bottom:25px}
+.landing-cta .hero-primary{position:relative}
+.landing-footer{max-width:1320px;margin:auto;padding:25px 38px 30px;border-top:1px solid #ffffff12;display:flex;align-items:center;gap:25px}
+.landing-footer .landing-brand{font-size:15px}
+.landing-footer .landing-brand-icon{width:31px;height:31px;border-radius:9px}
+.landing-footer .landing-brand-icon svg{width:17px}
+.landing-footer p{font-size:9px;color:#85809c}
+.landing-footer>span{margin-left:auto;font-size:9px;color:#706b85}
 
-function getAvatar(user) {
-  if (!user?.avatar) return null;
-  const extension = user.avatar.startsWith("a_") ? "gif" : "png";
-  return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${extension}?size=128`;
+/* RESPONSIVE */
+@media(max-width:1000px){
+  .content{padding:25px 20px}
+  .stats{gap:8px}
+  .system-grid{grid-template-columns:repeat(2,1fr)}
+  .hero{padding-left:40px;padding-right:40px}
+  .hero h1{font-size:62px}
+  .systems-intro{gap:35px}
+  .system-showcase{grid-template-columns:repeat(2,1fr)}
 }
-
-function LandingPage({ onLogin }) {
-  const features = [
-    {
-      icon: ShieldCheck,
-      title: "Smart Moderation",
-      description: "Keep your community protected with powerful moderation tools and automated controls."
-    },
-    {
-      icon: Ticket,
-      title: "Ticket System",
-      description: "Organize support requests with a clean and professional ticket experience."
-    },
-    {
-      icon: Users,
-      title: "Community Management",
-      description: "Manage members, welcome new people and keep your server organized."
-    },
-    {
-      icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Understand your community with activity insights and useful statistics."
-    },
-    {
-      icon: Zap,
-      title: "Automation",
-      description: "Reduce repetitive work with systems designed to make server management easier."
-    },
-    {
-      icon: Lock,
-      title: "Secure Workspace",
-      description: "Access your dashboard through your Discord account with a secure sign-in flow."
-    }
-  ];
-
-  const systemCards = [
-    ["Moderation", "Control and protect your server.", Shield],
-    ["Ticket System", "Give members a better support experience.", Ticket],
-    ["Welcome System", "Make every new member feel welcome.", Users],
-    ["Activity Logs", "Keep track of important server events.", ClipboardList]
-  ];
-
-  const faqs = [
-    [
-      "What is JONY OS?",
-      "JONY OS is a dashboard concept for managing Discord communities and their bot systems from one place."
-    ],
-    [
-      "How do I sign in?",
-      "Use the Continue with Discord button. You will be redirected to Discord to authorize your account."
-    ],
-    [
-      "Can I manage multiple servers?",
-      "The dashboard is designed to support server management. Actual server controls will become available as the bot and API integrations are connected."
-    ],
-    [
-      "Are all dashboard statistics real?",
-      "Some values currently shown in the preview are demonstration data. Live statistics require the backend and Discord bot integration."
-    ],
-    [
-      "Is JONY OS available on mobile?",
-      "Yes. The landing page and dashboard layout are designed to adapt to mobile and tablet screens."
-    ]
-  ];
-
-  return (
-    <div className="landing">
-      <nav className="landing-nav">
-        <a className="landing-brand" href="#home">
-          <span className="landing-brand-icon"><Crown /></span>
-          <span>JONY <em>OS</em></span>
-        </a>
-
-        <div className="landing-nav-links">
-          <a href="#home">Home</a>
-          <a href="#features">Features</a>
-          <a href="#systems">Systems</a>
-          <a href="#terms">Terms</a>
-          <a href="#faq">FAQ</a>
-        </div>
-
-        <button className="landing-login" onClick={onLogin}>
-          Login with Discord <ArrowUpRight size={16} />
-        </button>
-      </nav>
-
-      <section className="hero" id="home">
-        <div className="hero-glow hero-glow-one" />
-        <div className="hero-glow hero-glow-two" />
-
-        <div className="hero-content">
-          <div className="hero-badge">
-            <Sparkles size={14} />
-            THE NEXT GENERATION DISCORD PLATFORM
-          </div>
-
-          <h1>
-            Your server.
-            <br />
-            Your systems.
-            <br />
-            <span>One platform.</span>
-          </h1>
-
-          <p className="hero-description">
-            Take control of your Discord community with a powerful,
-            organized and modern management experience.
-          </p>
-
-          <div className="hero-actions">
-            <button className="hero-primary" onClick={onLogin}>
-              Continue with Discord <ArrowUpRight size={17} />
-            </button>
-            <a className="hero-secondary" href="#features">
-              Explore features <ChevronRight size={17} />
-            </a>
-          </div>
-
-          <div className="hero-trust">
-            <span><Check size={14} /> Easy to use</span>
-            <span><Check size={14} /> Modern dashboard</span>
-            <span><Check size={14} /> Built for communities</span>
-          </div>
-        </div>
-
-        <div className="hero-visual">
-          <div className="hero-orbit orbit-one" />
-          <div className="hero-orbit orbit-two" />
-
-          <div className="robot-card">
-            <div className="robot-crown"><Crown /></div>
-            <div className="robot-head">
-              <div className="robot-antenna" />
-              <div className="robot-face">
-                <span className="robot-eye" />
-                <span className="robot-eye" />
-                <span className="robot-mouth" />
-              </div>
-              <div className="robot-ear robot-ear-left" />
-              <div className="robot-ear robot-ear-right" />
-            </div>
-            <div className="robot-body">
-              <div className="robot-core"><Sparkles /></div>
-            </div>
-            <div className="robot-base" />
-          </div>
-
-          <div className="float-card float-card-top">
-            <span className="float-icon"><ShieldCheck /></span>
-            <div><b>Protection active</b><small>Systems operational</small></div>
-            <span className="float-dot" />
-          </div>
-
-          <div className="float-card float-card-bottom">
-            <span className="float-icon"><Activity /></span>
-            <div><b>Workspace status</b><small>All systems ready</small></div>
-            <span className="float-dot" />
-          </div>
-
-          <div className="hero-caption">POWERED BY JONY OS</div>
-        </div>
-
-        <a className="scroll-indicator" href="#features">
-          <span /> SCROLL TO EXPLORE
-        </a>
-      </section>
-
-      <section className="features-section landing-section" id="features">
-        <div className="section-heading">
-          <span className="section-kicker">BUILT FOR YOUR COMMUNITY</span>
-          <h2>Everything you need.<br /><span>All in one place.</span></h2>
-          <p>Powerful tools, organized into one simple workspace.</p>
-        </div>
-
-        <div className="feature-grid">
-          {features.map(({ icon: Icon, title, description }, index) => (
-            <article className="feature-card" key={title}>
-              <div className="feature-icon"><Icon /></div>
-              <span className="feature-number">0{index + 1}</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <div className="feature-card-line" />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="systems-section landing-section" id="systems">
-        <div className="systems-intro">
-          <div className="section-heading section-heading-left">
-            <span className="section-kicker">YOUR CONTROL CENTER</span>
-            <h2>Meet your new<br /><span>command center.</span></h2>
-            <p>
-              A clean workspace that brings your community tools together.
-              Spend less time switching between tools and more time building.
-            </p>
-            <button className="hero-primary" onClick={onLogin}>
-              Open your dashboard <ArrowUpRight size={17} />
-            </button>
-          </div>
-
-          <div className="dashboard-preview">
-            <div className="preview-topbar">
-              <div className="preview-dots"><i /><i /><i /></div>
-              <span>JONY OS / DASHBOARD</span>
-              <span className="preview-online">● ONLINE</span>
-            </div>
-            <div className="preview-layout">
-              <div className="preview-sidebar">
-                <div className="preview-logo"><Crown /></div>
-                <span className="preview-active"><LayoutDashboard /></span>
-                <span><Server /></span>
-                <span><BarChart3 /></span>
-                <span><Shield /></span>
-                <span><Ticket /></span>
-                <span><Settings /></span>
-              </div>
-              <div className="preview-main">
-                <div className="preview-welcome">
-                  <div><small>WORKSPACE / OVERVIEW</small><b>Welcome back!</b></div>
-                  <div className="preview-avatar">J</div>
-                </div>
-                <div className="preview-stats">
-                  <div><small>Servers</small><b>12</b><i>+12.8%</i></div>
-                  <div><small>Members</small><b>24.8K</b><i>+8.2%</i></div>
-                  <div><small>Uptime</small><b>99.9%</b><i>Stable</i></div>
-                </div>
-                <div className="preview-chart">
-                  <div><b>Server activity</b><small>Last 7 days</small></div>
-                  <div className="preview-bars">
-                    {[35, 54, 44, 75, 59, 92, 77, 100, 72, 86, 64, 91].map((height, i) => (
-                      <span key={i} style={{ height: `${height}%` }} />
-                    ))}
-                  </div>
-                </div>
-                <div className="preview-bottom">
-                  <div><span className="preview-status-dot" /> Moderation <small>Operational</small></div>
-                  <div><span className="preview-status-dot" /> Ticket System <small>Operational</small></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="system-showcase">
-          {systemCards.map(([title, description, Icon]) => (
-            <article className="showcase-card" key={title}>
-              <span><Icon /></span>
-              <div><b>{title}</b><p>{description}</p></div>
-              <ChevronRight />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="terms-section landing-section" id="terms">
-        <div className="section-heading">
-          <span className="section-kicker">PLEASE READ</span>
-          <h2>Terms & <span>Conditions.</span></h2>
-          <p>A few important things to know before using JONY OS.</p>
-        </div>
-
-        <div className="terms-grid">
-          <article className="terms-card">
-            <span>01</span>
-            <h3>Account Access</h3>
-            <p>You are responsible for keeping access to your Discord account secure. Sign-in is handled through Discord authorization.</p>
-          </article>
-          <article className="terms-card">
-            <span>02</span>
-            <h3>Acceptable Use</h3>
-            <p>Do not use the platform to violate Discord rules, disrupt communities, or interfere with the service.</p>
-          </article>
-          <article className="terms-card">
-            <span>03</span>
-            <h3>Service Availability</h3>
-            <p>Features may change as the platform develops. Availability of individual systems may depend on setup and integrations.</p>
-          </article>
-          <article className="terms-card">
-            <span>04</span>
-            <h3>Data & Privacy</h3>
-            <p>Discord account information is used to provide sign-in and identify your account. Do not share your account credentials.</p>
-          </article>
-        </div>
-        <p className="terms-note">By using JONY OS, you agree to use the platform responsibly and in accordance with applicable Discord policies.</p>
-      </section>
-
-      <section className="faq-section landing-section" id="faq">
-        <div className="section-heading">
-          <span className="section-kicker">GOT QUESTIONS?</span>
-          <h2>Frequently asked <span>questions.</span></h2>
-          <p>Quick answers to help you get started.</p>
-        </div>
-
-        <div className="faq-list">
-          {faqs.map(([question, answer]) => (
-            <details className="faq-item" key={question}>
-              <summary>{question}<ChevronDown /></summary>
-              <p>{answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      <section className="landing-cta">
-        <div className="cta-glow" />
-        <div className="cta-icon"><Crown /></div>
-        <span className="section-kicker">READY WHEN YOU ARE</span>
-        <h2>Take control of<br /><span>your community.</span></h2>
-        <p>Your next chapter starts with one click.</p>
-        <button className="hero-primary" onClick={onLogin}>
-          Continue with Discord <ArrowUpRight size={17} />
-        </button>
-      </section>
-
-      <footer className="landing-footer">
-        <a className="landing-brand" href="#home">
-          <span className="landing-brand-icon"><Crown /></span>
-          <span>JONY <em>OS</em></span>
-        </a>
-        <p>Built for better communities.</p>
-        <span>© 2026 JONY OS. All rights reserved.</span>
-      </footer>
-    </div>
-  );
+@media(max-width:700px){
+  .sidebar{transform:translateX(-100%);transition:.2s;width:260px}
+  .sidebar.show{transform:translateX(0)}
+  .scrim{display:block;position:fixed;inset:0;background:#0009;z-index:4}
+  .main-area,main{margin-left:0}
+  .hamb{display:block;background:none;border:0;color:#aaa;margin-right:10px}
+  .crumb{flex:1}
+  header{padding:0 13px}
+  .online{display:none}
+  .content{padding:22px 13px}
+  .heading{align-items:flex-start;flex-direction:column;gap:14px}
+  .heading h1{font-size:22px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .grid,.lower{grid-template-columns:1fr}
+  .system-grid{grid-template-columns:1fr}
+  .banner{flex-wrap:wrap}
+  .banner button{margin-left:38px}
+  .chart-area{height:190px}
+  .landing-nav{height:68px;padding:0 17px}
+  .landing-brand{font-size:16px;gap:8px}
+  .landing-brand-icon{width:33px;height:33px}
+  .landing-nav-links{display:none}
+  .landing-login{padding:9px 10px;font-size:9px}
+  .hero{min-height:auto;padding:75px 23px 90px;grid-template-columns:1fr;text-align:center}
+  .hero-content{margin:auto}
+  .hero-badge{font-size:7px;letter-spacing:.8px}
+  .hero h1{font-size:clamp(47px,12vw,66px);letter-spacing:-2.7px;margin:24px 0 17px}
+  .hero-description{font-size:12px;margin:auto}
+  .hero-actions{justify-content:center;gap:16px}
+  .hero-primary{padding:13px 15px;font-size:10px}
+  .hero-trust{justify-content:center;gap:12px}
+  .hero-trust span{font-size:8px}
+  .hero-visual{height:390px;margin-top:25px}
+  .robot-card{transform:scale(.85)}
+  .orbit-one{width:330px;height:190px}
+  .orbit-two{width:370px;height:245px}
+  .float-card{padding:9px}
+  .float-card-top{right:0;top:55px}
+  .float-card-bottom{left:0;bottom:45px}
+  .float-card b{font-size:8px}
+  .float-card small{font-size:7px}
+  .float-icon{width:29px;height:29px}
+  .hero-caption{right:10px;bottom:8px;font-size:7px}
+  .scroll-indicator{left:50%;transform:translateX(-50%);bottom:24px;white-space:nowrap}
+  .landing-section{padding:75px 19px}
+  .section-heading{margin-bottom:35px}
+  .section-heading h2,.systems-intro h2,.landing-cta h2{font-size:35px}
+  .section-heading p{font-size:11px}
+  .feature-grid{grid-template-columns:1fr;gap:11px}
+  .feature-card{min-height:190px;padding:21px}
+  .systems-intro{grid-template-columns:1fr;gap:35px}
+  .section-heading-left{text-align:center}
+  .systems-intro p{margin-left:auto;margin-right:auto}
+  .systems-intro .hero-primary{margin:auto}
+  .dashboard-preview{transform:none;padding:8px}
+  .preview-layout{min-height:230px}
+  .preview-main{padding:11px}
+  .preview-stats b{font-size:12px}
+  .preview-chart{padding:8px}
+  .preview-bars{height:55px}
+  .system-showcase{grid-template-columns:1fr;margin-top:35px}
+  .showcase-card{padding:13px}
+  .terms-grid{grid-template-columns:1fr}
+  .terms-card{padding:20px}
+  .faq-item summary{padding:16px;font-size:10px;gap:12px}
+  .faq-item p{padding:0 16px 16px}
+  .landing-cta{margin:10px 15px 65px;padding:55px 18px}
+  .landing-footer{padding:23px 18px;flex-wrap:wrap;gap:12px}
+  .landing-footer p{order:3;width:100%;margin:0}
+  .landing-footer>span{font-size:8px}
 }
-
-export default function App() {
-  const [page, setPage] = useState("Dashboard");
-  const [menu, setMenu] = useState(false);
-  const [enabled, setEnabled] = useState(systems.map(x => x[3]));
-  const [query, setQuery] = useState("");
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    fetch("/api/auth/me")
-      .then(async response => {
-        if (!response.ok) return null;
-        return response.json();
-      })
-      .then(result => {
-        if (active && result?.authenticated && result.user) {
-          setUser(result.user);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setAuthLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const login = () => {
-    window.location.href = "/api/auth/login";
-  };
-
-  if (authLoading) {
-    return (
-      <div className="auth-loading">
-        <div className="loading-crown"><Crown /></div>
-        <h2>JONY <em>OS</em></h2>
-        <p>Preparing your experience...</p>
-        <div className="loading-line"><span /></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LandingPage onLogin={login} />;
-  }
-
-  const avatar = getAvatar(user);
-  const displayName = user?.global_name || user?.username || "Guest";
-
-  const stats = [
-    ["Connected servers", "12", "+12.8%", Server],
-    ["Total members", "24.8K", "+8.2%", Users],
-    ["Messages handled", "1.2M", "+18.4%", MessageSquare],
-    ["Bot uptime", "99.9%", "30 days", Activity]
-  ];
-
-  return (
-    <div className="app">
-      {menu && <div className="scrim" onClick={() => setMenu(false)} />}
-
-      <aside className={menu ? "sidebar show" : "sidebar"}>
-        <div className="brand">
-          <div className="brand-icon"><Crown /></div>
-          <div>
-            <b>JONY <em>OS</em></b>
-            <small>DISCORD BOT PLATFORM</small>
-          </div>
-          <button className="close" onClick={() => setMenu(false)}>
-            <X />
-          </button>
-        </div>
-
-        <div className="workspace">
-          <div className="server-logo">J</div>
-          <div>
-            <b>JONY Workspace</b>
-            <small>Free workspace</small>
-          </div>
-          <ChevronDown size={15} />
-        </div>
-
-        {groups.map(group => (
-          <section className="nav-group" key={group.title}>
-            <label>{group.title}</label>
-            {group.links.map(([name, Icon]) => (
-              <button
-                className={page === name ? "nav active" : "nav"}
-                key={name}
-                onClick={() => {
-                  setPage(name);
-                  setMenu(false);
-                }}
-              >
-                <Icon size={17} />
-                {name}
-              </button>
-            ))}
-          </section>
-        ))}
-
-        <div className="help">
-          <b>Need a hand?</b>
-          <p>Explore guides and get help setting up your bot.</p>
-          <span>Visit help center ↗</span>
-        </div>
-
-        <div className="user">
-          {avatar ? (
-            <img className="avatar" src={avatar} alt="Discord avatar" />
-          ) : (
-            <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
-          )}
-          <div>
-            <b>{displayName}</b>
-            <small>Discord Account</small>
-          </div>
-        </div>
-      </aside>
-
-      <main>
-        <header>
-          <button className="hamb" onClick={() => setMenu(true)}>
-            <Menu />
-          </button>
-          <div className="crumb">Workspace　›　<b>{page}</b></div>
-          <div className="right">
-            <span className="online">● All systems operational</span>
-            <button className="round"><Search /></button>
-            <button className="round"><Bell /></button>
-            {avatar ? (
-              <img className="avatar" src={avatar} alt="Discord avatar" />
-            ) : (
-              <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
-            )}
-          </div>
-        </header>
-
-        <div className="content">
-          <div className="heading">
-            <div>
-              <label>WORKSPACE / {page.toUpperCase()}</label>
-              <h1>{page === "Dashboard" ? `Welcome back, ${displayName} 👋` : page}</h1>
-              <p>
-                {page === "Dashboard"
-                  ? "Here's what's happening with your Discord bot today."
-                  : `Manage and configure your ${page.toLowerCase()} workspace.`}
-              </p>
-            </div>
-            <button className="primary" onClick={() => setPage("Systems")}>
-              <Sparkles size={16} /> Customize dashboard
-            </button>
-          </div>
-
-          {page === "Dashboard" && (
-            <>
-              <div className="stats">
-                {stats.map(([label, value, change, Icon]) => (
-                  <div className="stat" key={label}>
-                    <div className="stat-top">
-                      <span className="stat-icon"><Icon /></span>
-                      <small>↗ {change}</small>
-                    </div>
-                    <strong>{value}</strong>
-                    <p>{label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid">
-                <section className="panel chart">
-                  <div className="panel-head">
-                    <div><b>Server activity</b><p>Member growth over the last 7 days</p></div>
-                    <button className="select">Last 7 days⌄</button>
-                  </div>
-                  <div className="chart-area">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={data}>
-                        <defs>
-                          <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#9b78ff" stopOpacity=".35" />
-                            <stop offset="100%" stopColor="#9b78ff" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid stroke="#252740" vertical={false} />
-                        <XAxis dataKey="day" tick={{ fill: "#8589a5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: "#8589a5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ background: "#17182c", border: "1px solid #393451", borderRadius: 10 }} />
-                        <Area type="monotone" dataKey="members" stroke="#a78bfa" strokeWidth={3} fill="url(#fill)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </section>
-
-                <section className="panel">
-                  <div className="panel-head">
-                    <div><b>System status</b><p>Your active modules</p></div>
-                    <span className="live">● LIVE</span>
-                  </div>
-                  {["Moderation", "Ticket System", "Welcome", "Auto Moderation", "Audit Logs"].map(item => (
-                    <div className="status" key={item}>
-                      <span><Check size={13} /></span>{item}<small>Operational</small>
-                    </div>
-                  ))}
-                  <button className="link" onClick={() => setPage("Systems")}>View all systems ↗</button>
-                </section>
-              </div>
-
-              <div className="grid lower">
-                <section className="panel">
-                  <div className="panel-head">
-                    <div><b>Your servers</b><p>Recently connected Discord servers</p></div>
-                    <button className="link" onClick={() => setPage("Servers")}>View all ↗</button>
-                  </div>
-                  {[["GE", "Galaxy Empire", "8,420"], ["AW", "Anime World", "5,210"], ["GH", "Gaming Hub", "3,840"]].map(server => (
-                    <div className="server-row" key={server[1]}>
-                      <div className="server-logo">{server[0]}</div>
-                      <div><b>{server[1]}</b><small>{server[2]} members</small></div>
-                      <span>Connected</span>
-                    </div>
-                  ))}
-                </section>
-
-                <section className="panel">
-                  <div className="panel-head"><div><b>Recent activity</b><p>Latest workspace events</p></div></div>
-                  {["Moderation action logged", "New ticket created", "Member joined the server"].map((item, i) => (
-                    <div className="activity" key={item}>
-                      <span>{i === 0 ? <Shield /> : i === 1 ? <Ticket /> : <Users />}</span>
-                      <div>
-                        <b>{item}</b>
-                        <small>{["Galaxy Empire · 2 min ago", "Anime World · 18 min ago", "Gaming Hub · 42 min ago"][i]}</small>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              </div>
-
-              <div className="banner">
-                <Crown />
-                <div>
-                  <b>Make community management effortless.</b>
-                  <p>Explore JONY OS systems and build your perfect server experience.</p>
-                </div>
-                <button onClick={() => setPage("Systems")}>Explore systems ↗</button>
-              </div>
-            </>
-          )}
-
-          {page === "Systems" && (
-            <>
-              <div className="toolbar">
-                <div className="search">
-                  <Search size={16} />
-                  <input placeholder="Find a system..." value={query} onChange={e => setQuery(e.target.value)} />
-                </div>
-                <span className="live">{enabled.filter(Boolean).length} ACTIVE</span>
-              </div>
-              <div className="system-grid">
-                {systems.map(([name, desc, Icon], i) =>
-                  name.toLowerCase().includes(query.toLowerCase()) && (
-                    <section className="panel system" key={name}>
-                      <div className="system-top">
-                        <span className="system-icon"><Icon /></span>
-                        <input
-                          type="checkbox"
-                          checked={enabled[i]}
-                          onChange={() => setEnabled(old => old.map((value, index) => i === index ? !value : value))}
-                        />
-                      </div>
-                      <b>{name}</b>
-                      <p>{desc}</p>
-                      <div className="system-bottom">
-                        <small className={enabled[i] ? "green" : "muted"}>● {enabled[i] ? "Enabled" : "Disabled"}</small>
-                        <button className="link">Configure ›</button>
-                      </div>
-                    </section>
-                  )
-                )}
-              </div>
-            </>
-          )}
-
-          {page === "Servers" && (
-            <div className="panel placeholder">
-              <Server />
-              <h2>Your Discord account is connected</h2>
-              <p>Signed in as {displayName}. Your managed servers will appear here after we connect the server API.</p>
-              {avatar && <img src={avatar} alt="Discord avatar" style={{ width: 64, height: 64, borderRadius: "50%" }} />}
-              <p>{user.username}</p>
-            </div>
-          )}
-
-          {page === "Analytics" && (
-            <div className="panel placeholder">
-              <BarChart3 /><h2>Analytics overview</h2>
-              <p>Charts will show real server activity after connecting the bot and database.</p>
-            </div>
-          )}
-
-          {!["Dashboard", "Systems", "Servers", "Analytics"].includes(page) && (
-            <div className="panel placeholder">
-              <Settings /><h2>{page} settings</h2>
-              <p>This section is included in the dashboard layout. We'll connect its working controls in the next stage.</p>
-            </div>
-          )}
-
-          <footer>
-            © 2026 JONY OS
-            <span>Built for better communities.</span>
-            <small>PREVIEW V1.0</small>
-          </footer>
-        </div>
-      </main>
-    </div>
-  );
+@media(max-width:380px){
+  .landing-login{font-size:8px;padding:8px}
+  .landing-brand{font-size:14px}
+  .hero h1{font-size:45px}
+  .hero-trust{gap:8px}
+  .hero-trust span{font-size:7px}
+  .float-card-top{right:-7px}
+  .float-card-bottom{left:-7px}
+  .preview-sidebar{width:38px}
+  .preview-main{padding:8px}
+  .preview-stats{gap:4px}
+  .preview-stats>div{padding:7px 5px}
 }
