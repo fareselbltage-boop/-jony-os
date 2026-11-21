@@ -45,6 +45,108 @@ function getAvatar(user) {
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${extension}?size=128`;
 }
 
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+  perPage,
+  label
+}) {
+  if (totalItems <= perPage) return null;
+
+  const start = (currentPage - 1) * perPage + 1;
+  const end = Math.min(currentPage * perPage, totalItems);
+
+  const buttonStyle = {
+    minWidth: "34px",
+    height: "34px",
+    padding: "0 10px",
+    borderRadius: "8px",
+    border: "1px solid rgba(145,90,255,0.3)",
+    background: "rgba(145,90,255,0.13)",
+    color: "#c7a8ff",
+    cursor: "pointer",
+    fontSize: "13px"
+  };
+
+  const activeStyle = {
+    ...buttonStyle,
+    background: "#8050d8",
+    borderColor: "#9869ef",
+    color: "#ffffff"
+  };
+
+  const disabledStyle = {
+    ...buttonStyle,
+    opacity: 0.35,
+    cursor: "not-allowed"
+  };
+
+  return (
+    <div
+      className="pagination"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "10px",
+        flexWrap: "wrap",
+        marginTop: "16px",
+        paddingTop: "14px",
+        borderTop: "1px solid rgba(255,255,255,0.08)"
+      }}
+    >
+      <span
+        style={{
+          color: "#aaa4b8",
+          fontSize: "12px"
+        }}
+      >
+        Showing {start}–{end} of {totalItems} {label}
+      </span>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "5px",
+          flexWrap: "wrap"
+        }}
+      >
+        <button
+          type="button"
+          style={currentPage === 1 ? disabledStyle : buttonStyle}
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          ‹
+        </button>
+
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map(number => (
+          <button
+            type="button"
+            key={number}
+            style={currentPage === number ? activeStyle : buttonStyle}
+            onClick={() => onPageChange(number)}
+          >
+            {number}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          style={currentPage === totalPages ? disabledStyle : buttonStyle}
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function LandingPage({ onLogin }) {
   const features = [
     {
@@ -455,17 +557,32 @@ export default function App() {
   const [detailsError, setDetailsError] = useState("");
 
   const [rolePage, setRolePage] = useState(1);
+  const [channelPage, setChannelPage] = useState(1);
+
   const rolesPerPage = 8;
+  const channelsPerPage = 8;
 
   const allRoles = serverDetails?.roles || [];
+  const allChannels = serverDetails?.channels || [];
+
   const totalRolePages = Math.max(
     1,
     Math.ceil(allRoles.length / rolesPerPage)
   );
 
+  const totalChannelPages = Math.max(
+    1,
+    Math.ceil(allChannels.length / channelsPerPage)
+  );
+
   const displayedRoles = allRoles.slice(
     (rolePage - 1) * rolesPerPage,
     rolePage * rolesPerPage
+  );
+
+  const displayedChannels = allChannels.slice(
+    (channelPage - 1) * channelsPerPage,
+    channelPage * channelsPerPage
   );
 
   useEffect(() => {
@@ -507,7 +624,7 @@ export default function App() {
         throw new Error(result.error || "Could not load servers");
       }
 
-      const sortedServers = (result.servers || []).sort(
+      const sortedServers = [...(result.servers || [])].sort(
         (a, b) => Number(Boolean(b.isBotAdded)) - Number(Boolean(a.isBotAdded))
       );
 
@@ -531,6 +648,7 @@ export default function App() {
     setDetailsError("");
     setDetailsLoading(true);
     setRolePage(1);
+    setChannelPage(1);
     setPage("Server Dashboard");
     setMenu(false);
 
@@ -558,6 +676,7 @@ export default function App() {
     setServerDetails(null);
     setDetailsError("");
     setRolePage(1);
+    setChannelPage(1);
     setPage("Servers");
   };
 
@@ -1015,31 +1134,40 @@ export default function App() {
                       <div className="panel-head">
                         <div>
                           <b>Server channels</b>
-                          <p>Channels returned by Discord</p>
+                          <p>
+                            Showing {displayedChannels.length} of {allChannels.length} channels
+                          </p>
                         </div>
 
                         <span className="live">
-                          {serverDetails.channels?.length || 0}
+                          {allChannels.length}
                         </span>
                       </div>
 
                       <div className="server-data-list">
-                        {(serverDetails.channels || [])
-                          .slice(0, 12)
-                          .map(channel => (
-                            <div className="server-data-row" key={channel.id}>
-                              <MessageSquare size={16} />
-                              <span>{channel.name}</span>
-                              <small>
-                                {channel.type === 4 ? "Category" : "Channel"}
-                              </small>
-                            </div>
-                          ))}
+                        {displayedChannels.map(channel => (
+                          <div className="server-data-row" key={channel.id}>
+                            <MessageSquare size={16} />
+                            <span>{channel.name}</span>
+                            <small>
+                              {channel.type === 4 ? "Category" : "Channel"}
+                            </small>
+                          </div>
+                        ))}
 
-                        {!serverDetails.channels?.length && (
+                        {!allChannels.length && (
                           <p>No channels available.</p>
                         )}
                       </div>
+
+                      <Pagination
+                        currentPage={channelPage}
+                        totalPages={totalChannelPages}
+                        onPageChange={setChannelPage}
+                        totalItems={allChannels.length}
+                        perPage={channelsPerPage}
+                        label="channels"
+                      />
                     </section>
 
                     <section className="panel">
@@ -1070,72 +1198,14 @@ export default function App() {
                         )}
                       </div>
 
-                      {allRoles.length > rolesPerPage && (
-                        <div
-                          className="role-pagination"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: "10px",
-                            marginTop: "16px",
-                            paddingTop: "14px",
-                            borderTop: "1px solid rgba(255,255,255,0.08)"
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRolePage(current => Math.max(1, current - 1))
-                            }
-                            disabled={rolePage === 1}
-                            style={{
-                              padding: "9px 13px",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(145,90,255,0.3)",
-                              background: "rgba(145,90,255,0.13)",
-                              color: "#c7a8ff",
-                              cursor: rolePage === 1 ? "not-allowed" : "pointer",
-                              opacity: rolePage === 1 ? 0.4 : 1
-                            }}
-                          >
-                            Previous
-                          </button>
-
-                          <span
-                            style={{
-                              color: "#aaa4b8",
-                              fontSize: "13px",
-                              whiteSpace: "nowrap"
-                            }}
-                          >
-                            Page {rolePage} of {totalRolePages}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRolePage(current =>
-                                Math.min(totalRolePages, current + 1)
-                              )
-                            }
-                            disabled={rolePage === totalRolePages}
-                            style={{
-                              padding: "9px 13px",
-                              borderRadius: "8px",
-                              border: "1px solid rgba(145,90,255,0.3)",
-                              background: "rgba(145,90,255,0.13)",
-                              color: "#c7a8ff",
-                              cursor: rolePage === totalRolePages
-                                ? "not-allowed"
-                                : "pointer",
-                              opacity: rolePage === totalRolePages ? 0.4 : 1
-                            }}
-                          >
-                            Next
-                          </button>
-                        </div>
-                      )}
+                      <Pagination
+                        currentPage={rolePage}
+                        totalPages={totalRolePages}
+                        onPageChange={setRolePage}
+                        totalItems={allRoles.length}
+                        perPage={rolesPerPage}
+                        label="roles"
+                      />
                     </section>
                   </div>
                 </>
