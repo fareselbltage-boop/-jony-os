@@ -1,5 +1,5 @@
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
   const token = cookies.jony_discord_token;
 
   if (!token) {
-    return res.status(401).json({ authenticated: false });
+    return res.status(200).json({ authenticated: false });
   }
 
   try {
@@ -29,7 +29,8 @@ module.exports = async (req, res) => {
       res.setHeader("Set-Cookie",
         "jony_discord_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
       );
-      return res.status(401).json({ authenticated: false });
+
+      return res.status(200).json({ authenticated: false });
     }
 
     const user = await response.json();
@@ -46,4 +47,4 @@ module.exports = async (req, res) => {
   } catch {
     return res.status(500).json({ error: "Internal server error" });
   }
-};
+}
