@@ -1,5 +1,5 @@
 
-import getDatabase from "./db.js";
+mport getDatabase from "./db.js";
 
 function getCookies(header = "") {
   const cookies = {};
