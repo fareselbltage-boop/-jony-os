@@ -1,5 +1,5 @@
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).send("Method not allowed");
   }
@@ -14,21 +14,34 @@ module.exports = async (req, res) => {
 
   const { code, state } = req.query;
 
-  if (!code || !state || !cookies.jony_oauth_state ||
-      state !== cookies.jony_oauth_state) {
+  if (
+    !code ||
+    !state ||
+    !cookies.jony_oauth_state ||
+    state !== cookies.jony_oauth_state
+  ) {
     res.setHeader("Set-Cookie",
       "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
     );
+
     return res.status(400).send("Invalid OAuth state.");
+  }
+
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+  const redirectUri = process.env.DISCORD_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    return res.status(500).send("Discord OAuth is not configured.");
   }
 
   try {
     const params = new URLSearchParams({
-      client_id: process.env.DISCORD_CLIENT_ID,
-      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: "authorization_code",
       code,
-      redirect_uri: process.env.DISCORD_REDIRECT_URI
+      redirect_uri: redirectUri
     });
 
     const tokenResponse = await fetch(
@@ -61,10 +74,8 @@ module.exports = async (req, res) => {
       throw new Error("Could not fetch Discord user");
     }
 
-    const user = await userResponse.json();
-
     res.setHeader("Set-Cookie", [
-      `jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`,
+      "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
       `jony_discord_token=${encodeURIComponent(tokens.access_token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${tokens.expires_in || 604800}`
     ]);
 
@@ -73,6 +84,7 @@ module.exports = async (req, res) => {
     res.setHeader("Set-Cookie",
       "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
     );
+
     return res.status(500).send("Discord login failed. Please try again.");
   }
-};
+}
