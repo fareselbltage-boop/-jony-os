@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 export default function handler(req, res) {
   if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).send("Method not allowed");
   }
 
   const clientId = process.env.DISCORD_CLIENT_ID;
@@ -12,10 +12,9 @@ export default function handler(req, res) {
     return res.status(500).send("Discord OAuth is not configured.");
   }
 
-  const state = randomBytes(24).toString("hex");
+  const state = randomBytes(32).toString("hex");
 
-  res.setHeader(
-    "Set-Cookie",
+  res.setHeader("Set-Cookie", 
     `jony_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`
   );
 
@@ -27,5 +26,7 @@ export default function handler(req, res) {
     state
   });
 
-  return res.redirect(`https://discord.com/oauth2/authorize?${params}`);
+  return res.redirect(
+    `https://discord.com/oauth2/authorize?${params.toString()}`
+  );
 }
