@@ -44,52 +44,85 @@ async function refreshDiscordToken(refreshToken) {
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
   if (!clientId || !clientSecret || !refreshToken) {
-    return null;
+    return {
+      ok: false,
+      status: 0,
+      error: "Missing OAuth configuration or refresh token"
+    };
   }
 
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    grant_type: "refresh_token",
-    refresh_token: refreshToken
-  });
+  try {
+    const params = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken
+    });
 
-  const response = await fetch(
-    "https://discord.com/api/oauth2/token",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: params
+    const response = await fetch(
+      "https://discord.com/api/oauth2/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      }
+    );
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data?.access_token) {
+      console.error("Discord refresh error:", {
+        status: response.status,
+        error: data?.error,
+        description: data?.error_description
+      });
+
+      return {
+        ok: false,
+        status: response.status,
+        error: data?.error_description || data?.error || "Token refresh failed"
+      };
     }
-  );
 
-  const tokens = await response.json();
+    return {
+      ok: true,
+      tokens: data
+    };
+  } catch (error) {
+    console.error("Discord refresh request failed:", error.message);
 
-  if (!response.ok || !tokens.access_token) {
-    return null;
+    return {
+      ok: false,
+      status: 0,
+      error: "Network request failed"
+    };
   }
-
-  return tokens;
 }
 
 async function fetchDiscord(url, headers) {
-  const response = await fetch(url, { headers });
-
-  let data = null;
-
   try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
+    const response = await fetch(url, { headers });
 
-  return {
-    ok: response.ok,
-    status: response.status,
-    data
-  };
+    const data = await response.json().catch(() => null);
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data
+    };
+  } catch (error) {
+    console.error("Discord request failed:", error.message);
+
+    return {
+      ok: false,
+      status: 0,
+      data: {
+        message: "Network request failed"
+      }
+    };
+  }
 }
 
 async function authorizeGuild(req, res, guildId) {
@@ -127,25 +160,27 @@ async function authorizeGuild(req, res, guildId) {
       clearSessionCookies(res);
 
       return {
-        error: "Discord session expired",
+        error: "Discord session expired. Please login again.",
         status: 401
       };
     }
 
-    const newTokens = await refreshDiscordToken(refreshToken);
+    const refreshed = await refreshDiscordToken(refreshToken);
 
-    if (!newTokens) {
+    if (!refreshed.ok) {
       clearSessionCookies(res);
 
       return {
-        error: "Discord session expired",
-        status: 401
+        error: "Discord session expired. Please login again.",
+        status: 401,
+        discordStatus: refreshed.status,
+        discordError: refreshed.error
       };
     }
 
-    userToken = newTokens.access_token;
+    userToken = refreshed.tokens.access_token;
 
-    saveSessionCookies(res, newTokens, refreshToken);
+    saveSessionCookies(res, refreshed.tokens, refreshToken);
 
     result = await fetchDiscord(guildsUrl, {
       Authorization: `Bearer ${userToken}`
@@ -153,18 +188,27 @@ async function authorizeGuild(req, res, guildId) {
   }
 
   if (!result.ok) {
+    console.error("Discord guild verification failed:", {
+      status: result.status,
+      message: result.data?.message,
+      code: result.data?.code
+    });
+
     if (result.status === 401) {
       clearSessionCookies(res);
 
       return {
-        error: "Discord session expired",
+        error: "Discord session expired. Please login again.",
         status: 401
       };
     }
 
     return {
       error: "Could not verify Discord permissions",
-      status: 502
+      status: 502,
+      discordStatus: result.status,
+      discordError: result.data?.message || "Unknown Discord error",
+      discordCode: result.data?.code || null
     };
   }
 
@@ -231,8 +275,13 @@ function isSafeObject(value, depth = 0) {
           if (
             element &&
             typeof element === "object" &&
+            !Array.isArray(element) &&
             !isSafeObject(element, depth + 1)
           ) {
+            return false;
+          }
+
+          if (Array.isArray(element)) {
             return false;
           }
         }
@@ -273,7 +322,16 @@ export default async function handler(req, res) {
 
     if (authorization.error) {
       return res.status(authorization.status).json({
-        error: authorization.error
+        error: authorization.error,
+        ...(authorization.discordStatus !== undefined && {
+          discordStatus: authorization.discordStatus
+        }),
+        ...(authorization.discordError && {
+          discordError: authorization.discordError
+        }),
+        ...(authorization.discordCode !== undefined && {
+          discordCode: authorization.discordCode
+        })
       });
     }
 
@@ -320,7 +378,9 @@ export default async function handler(req, res) {
           createdAt: updatedAt
         }
       },
-      { upsert: true }
+      {
+        upsert: true
+      }
     );
 
     return res.status(200).json({
