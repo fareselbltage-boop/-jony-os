@@ -1,3 +1,4 @@
+
 import { randomBytes } from "node:crypto";
 
 export default function handler(req, res) {
@@ -14,9 +15,10 @@ export default function handler(req, res) {
 
   const state = randomBytes(32).toString("hex");
 
-  res.setHeader("Set-Cookie", 
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Set-Cookie", [
     `jony_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`
-  );
+  ]);
 
   const params = new URLSearchParams({
     client_id: clientId,
