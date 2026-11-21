@@ -4,7 +4,6 @@ function getCookies(header = "") {
 
   for (const part of header.split(";")) {
     const index = part.indexOf("=");
-
     if (index === -1) continue;
 
     const name = part.slice(0, index).trim();
@@ -20,9 +19,11 @@ function getCookies(header = "") {
   return cookies;
 }
 
-function clearStateCookie(res) {
+function clearCookies(res) {
   res.setHeader("Set-Cookie", [
-    "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+    "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
+    "jony_discord_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
+    "jony_discord_refresh_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
   ]);
 }
 
@@ -35,7 +36,6 @@ export default async function handler(req, res) {
 
   const cookies = getCookies(req.headers.cookie || "");
   const { code, state } = req.query;
-
   const savedState = cookies.jony_oauth_state;
 
   if (
@@ -45,8 +45,7 @@ export default async function handler(req, res) {
     !savedState ||
     state !== savedState
   ) {
-    clearStateCookie(res);
-
+    clearCookies(res);
     return res.status(400).send(
       "Invalid OAuth state. Please open the production website and try again."
     );
@@ -82,12 +81,16 @@ export default async function handler(req, res) {
 
     const tokens = await tokenResponse.json();
 
-    if (!tokenResponse.ok || !tokens.access_token) {
+    if (
+      !tokenResponse.ok ||
+      !tokens.access_token ||
+      !tokens.refresh_token
+    ) {
       throw new Error("Token exchange failed");
     }
 
     const userResponse = await fetch(
-      "https://discord.com/api/users/@me",
+      "https://discord.com/api/v10/users/@me",
       {
         headers: {
           Authorization: `Bearer ${tokens.access_token}`
@@ -99,17 +102,17 @@ export default async function handler(req, res) {
       throw new Error("Could not fetch Discord user");
     }
 
+    const expiresIn = Number(tokens.expires_in) || 604800;
+
     res.setHeader("Set-Cookie", [
       "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
-      `jony_discord_token=${encodeURIComponent(tokens.access_token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${tokens.expires_in || 604800}`
+      `jony_discord_token=${encodeURIComponent(tokens.access_token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${expiresIn}`,
+      `jony_discord_refresh_token=${encodeURIComponent(tokens.refresh_token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`
     ]);
 
     return res.redirect("/");
-  } catch (error) {
-    clearStateCookie(res);
-
-    return res.status(500).send(
-      "Discord login failed. Please try again."
-    );
+  } catch {
+    clearCookies(res);
+    return res.status(500).send("Discord login failed. Please try again.");
   }
 }
