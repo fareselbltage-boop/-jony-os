@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -453,6 +454,20 @@ export default function App() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState("");
 
+  const [rolePage, setRolePage] = useState(1);
+  const rolesPerPage = 8;
+
+  const allRoles = serverDetails?.roles || [];
+  const totalRolePages = Math.max(
+    1,
+    Math.ceil(allRoles.length / rolesPerPage)
+  );
+
+  const displayedRoles = allRoles.slice(
+    (rolePage - 1) * rolesPerPage,
+    rolePage * rolesPerPage
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -492,7 +507,11 @@ export default function App() {
         throw new Error(result.error || "Could not load servers");
       }
 
-      setServers(result.servers || []);
+      const sortedServers = (result.servers || []).sort(
+        (a, b) => Number(Boolean(b.isBotAdded)) - Number(Boolean(a.isBotAdded))
+      );
+
+      setServers(sortedServers);
     } catch (error) {
       setServersError(error.message || "Something went wrong");
     } finally {
@@ -511,6 +530,7 @@ export default function App() {
     setServerDetails(null);
     setDetailsError("");
     setDetailsLoading(true);
+    setRolePage(1);
     setPage("Server Dashboard");
     setMenu(false);
 
@@ -537,6 +557,7 @@ export default function App() {
     setSelectedServer(null);
     setServerDetails(null);
     setDetailsError("");
+    setRolePage(1);
     setPage("Servers");
   };
 
@@ -1025,29 +1046,96 @@ export default function App() {
                       <div className="panel-head">
                         <div>
                           <b>Server roles</b>
-                          <p>Roles returned by Discord</p>
+                          <p>
+                            Showing {displayedRoles.length} of {allRoles.length} roles
+                          </p>
                         </div>
 
                         <span className="live">
-                          {serverDetails.roles?.length || 0}
+                          {allRoles.length}
                         </span>
                       </div>
 
                       <div className="server-data-list">
-                        {(serverDetails.roles || [])
-                          .slice(0, 12)
-                          .map(role => (
-                            <div className="server-data-row" key={role.id}>
-                              <Shield size={16} />
-                              <span>{role.name}</span>
-                              <small>{role.position}</small>
-                            </div>
-                          ))}
+                        {displayedRoles.map(role => (
+                          <div className="server-data-row" key={role.id}>
+                            <Shield size={16} />
+                            <span>{role.name}</span>
+                            <small>{role.position}</small>
+                          </div>
+                        ))}
 
-                        {!serverDetails.roles?.length && (
+                        {!allRoles.length && (
                           <p>No roles available.</p>
                         )}
                       </div>
+
+                      {allRoles.length > rolesPerPage && (
+                        <div
+                          className="role-pagination"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "10px",
+                            marginTop: "16px",
+                            paddingTop: "14px",
+                            borderTop: "1px solid rgba(255,255,255,0.08)"
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRolePage(current => Math.max(1, current - 1))
+                            }
+                            disabled={rolePage === 1}
+                            style={{
+                              padding: "9px 13px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(145,90,255,0.3)",
+                              background: "rgba(145,90,255,0.13)",
+                              color: "#c7a8ff",
+                              cursor: rolePage === 1 ? "not-allowed" : "pointer",
+                              opacity: rolePage === 1 ? 0.4 : 1
+                            }}
+                          >
+                            Previous
+                          </button>
+
+                          <span
+                            style={{
+                              color: "#aaa4b8",
+                              fontSize: "13px",
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            Page {rolePage} of {totalRolePages}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRolePage(current =>
+                                Math.min(totalRolePages, current + 1)
+                              )
+                            }
+                            disabled={rolePage === totalRolePages}
+                            style={{
+                              padding: "9px 13px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(145,90,255,0.3)",
+                              background: "rgba(145,90,255,0.13)",
+                              color: "#c7a8ff",
+                              cursor: rolePage === totalRolePages
+                                ? "not-allowed"
+                                : "pointer",
+                              opacity: rolePage === totalRolePages ? 0.4 : 1
+                            }}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
                     </section>
                   </div>
                 </>
@@ -1143,4 +1231,4 @@ export default function App() {
       </main>
     </div>
   );
-          }
+}
