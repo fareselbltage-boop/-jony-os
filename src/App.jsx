@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -10,7 +9,6 @@ import {
   ClipboardList,
   Wallet,
   Settings,
-  Bell,
   Search,
   ChevronDown,
   Activity,
@@ -25,7 +23,12 @@ import {
   ShieldCheck,
   Zap,
   Lock,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  Hash,
+  Volume2,
+  Folder,
+  Percent
 } from "lucide-react";
 
 const systems = [
@@ -538,6 +541,459 @@ function LandingPage({ onLogin }) {
   );
 }
 
+function AnalyticsView({
+  selectedServer,
+  serverDetails,
+  loading,
+  error,
+  onRefresh,
+  onChooseServer
+}) {
+  if (!selectedServer) {
+    return (
+      <div className="panel placeholder">
+        <BarChart3 />
+        <h2>Select a server first</h2>
+        <p>
+          Choose one of your Discord servers to view its live analytics.
+        </p>
+
+        <button className="primary" onClick={onChooseServer}>
+          <Server size={16} />
+          Choose Server
+        </button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="panel placeholder">
+        <Activity className="spin" />
+        <h2>Loading analytics...</h2>
+        <p>Retrieving live server statistics from Discord.</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="panel placeholder">
+        <Shield />
+        <h2>Analytics unavailable</h2>
+        <p>{error}</p>
+
+        <button className="primary" onClick={onRefresh}>
+          <RefreshCw size={16} />
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (!serverDetails) {
+    return (
+      <div className="panel placeholder">
+        <BarChart3 />
+        <h2>No analytics data</h2>
+        <p>Refresh the analytics to retrieve the current server data.</p>
+
+        <button className="primary" onClick={onRefresh}>
+          <RefreshCw size={16} />
+          Load Analytics
+        </button>
+      </div>
+    );
+  }
+
+  const channels = serverDetails.channels || [];
+
+  const categories = channels.filter(channel => channel.type === 4);
+  const textChannels = channels.filter(channel =>
+    [0, 5, 10, 11, 12, 15].includes(channel.type)
+  );
+  const voiceChannels = channels.filter(channel =>
+    [2, 13].includes(channel.type)
+  );
+
+  const memberCount = Number(serverDetails.memberCount || 0);
+  const onlineCount = Number(serverDetails.onlineCount || 0);
+
+  const onlinePercentage = memberCount > 0
+    ? Math.min(100, Math.round((onlineCount / memberCount) * 100))
+    : 0;
+
+  const stats = [
+    {
+      label: "Total Members",
+      value: memberCount.toLocaleString(),
+      icon: Users,
+      description: "Current server members"
+    },
+    {
+      label: "Online Members",
+      value: onlineCount.toLocaleString(),
+      icon: Activity,
+      description: `${onlinePercentage}% currently online`
+    },
+    {
+      label: "Channels",
+      value: channels.length.toLocaleString(),
+      icon: MessageSquare,
+      description: "All server channels"
+    },
+    {
+      label: "Roles",
+      value: Number(serverDetails.roleCount || 0).toLocaleString(),
+      icon: Shield,
+      description: "Server roles"
+    }
+  ];
+
+  const channelStats = [
+    {
+      label: "Text Channels",
+      value: textChannels.length,
+      icon: Hash
+    },
+    {
+      label: "Voice Channels",
+      value: voiceChannels.length,
+      icon: Volume2
+    },
+    {
+      label: "Categories",
+      value: categories.length,
+      icon: Folder
+    }
+  ];
+
+  return (
+    <div className="analytics-page">
+      <div
+        className="panel"
+        style={{
+          marginBottom: "18px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flexWrap: "wrap"
+        }}
+      >
+        <div>
+          <span className="live">● LIVE DATA</span>
+          <h2 style={{ marginTop: "8px" }}>
+            {serverDetails.name}
+          </h2>
+          <p>
+            Real-time information retrieved from Discord.
+          </p>
+        </div>
+
+        <button
+          className="primary"
+          onClick={onRefresh}
+          disabled={loading}
+        >
+          <RefreshCw
+            size={16}
+            className={loading ? "spin" : ""}
+          />
+          {loading ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+
+      <div className="stats">
+        {stats.map(({ label, value, icon: Icon, description }) => (
+          <div className="stat" key={label}>
+            <div className="stat-top">
+              <span className="stat-icon">
+                <Icon />
+              </span>
+
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: "#73e6a2",
+                  background: "rgba(80,220,140,0.08)",
+                  padding: "5px 8px",
+                  borderRadius: "7px"
+                }}
+              >
+                LIVE
+              </span>
+            </div>
+
+            <strong>{value}</strong>
+            <p>{label}</p>
+
+            <small
+              style={{
+                display: "block",
+                marginTop: "6px",
+                color: "#777181",
+                fontSize: "11px"
+              }}
+            >
+              {description}
+            </small>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, 0.8fr)",
+          gap: "18px",
+          marginTop: "18px"
+        }}
+      >
+        <section className="panel">
+          <div className="panel-head">
+            <div>
+              <b>Member Presence</b>
+              <p>Current online member ratio</p>
+            </div>
+
+            <span className="live">
+              <Percent size={13} />
+              {onlinePercentage}%
+            </span>
+          </div>
+
+          <div
+            style={{
+              marginTop: "24px",
+              height: "12px",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.06)",
+              overflow: "hidden"
+            }}
+          >
+            <div
+              style={{
+                width: `${onlinePercentage}%`,
+                height: "100%",
+                borderRadius: "999px",
+                background: "linear-gradient(90deg, #6f42c1, #a66cff)",
+                transition: "width 0.4s ease"
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "12px",
+              color: "#9b95a8",
+              fontSize: "12px"
+            }}
+          >
+            <span>
+              {onlineCount.toLocaleString()} online
+            </span>
+
+            <span>
+              {Math.max(memberCount - onlineCount, 0).toLocaleString()} not online
+            </span>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <div>
+              <b>Server Status</b>
+              <p>Current connection state</p>
+            </div>
+
+            <span className="live">CONNECTED</span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "18px"
+            }}
+          >
+            <div className="server-data-row">
+              <Activity size={16} />
+              <span>Discord API</span>
+              <small style={{ color: "#73e6a2" }}>Online</small>
+            </div>
+
+            <div className="server-data-row">
+              <Server size={16} />
+              <span>Bot Connection</span>
+              <small style={{ color: "#73e6a2" }}>Connected</small>
+            </div>
+
+            <div className="server-data-row">
+              <BarChart3 size={16} />
+              <span>Analytics</span>
+              <small style={{ color: "#73e6a2" }}>Live</small>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: "18px",
+          marginTop: "18px"
+        }}
+      >
+        {channelStats.map(({ label, value, icon: Icon }) => (
+          <section className="panel" key={label}>
+            <div className="stat-top">
+              <span className="stat-icon">
+                <Icon />
+              </span>
+            </div>
+
+            <strong
+              style={{
+                display: "block",
+                fontSize: "28px",
+                marginTop: "14px"
+              }}
+            >
+              {value}
+            </strong>
+
+            <p>{label}</p>
+          </section>
+        ))}
+      </div>
+
+      <section className="panel" style={{ marginTop: "18px" }}>
+        <div className="panel-head">
+          <div>
+            <b>Channel Distribution</b>
+            <p>Current channel structure in this server</p>
+          </div>
+
+          <span className="live">
+            {channels.length} TOTAL
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px",
+            marginTop: "20px"
+          }}
+        >
+          {[
+            ["Text Channels", textChannels.length, Hash],
+            ["Voice Channels", voiceChannels.length, Volume2],
+            ["Categories", categories.length, Folder]
+          ].map(([label, value, Icon]) => {
+            const percentage = channels.length
+              ? Math.round((value / channels.length) * 100)
+              : 0;
+
+            return (
+              <div key={label}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "8px"
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      color: "#d5d0dd",
+                      fontSize: "13px"
+                    }}
+                  >
+                    <Icon size={15} />
+                    {label}
+                  </span>
+
+                  <span
+                    style={{
+                      color: "#9d95aa",
+                      fontSize: "12px"
+                    }}
+                  >
+                    {value} · {percentage}%
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    height: "8px",
+                    borderRadius: "999px",
+                    background: "rgba(255,255,255,0.05)",
+                    overflow: "hidden"
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${percentage}%`,
+                      height: "100%",
+                      borderRadius: "999px",
+                      background: "linear-gradient(90deg, #6f42c1, #a66cff)"
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <div
+        className="panel"
+        style={{
+          marginTop: "18px",
+          borderColor: "rgba(145,90,255,0.22)"
+        }}
+      >
+        <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+          <div
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "10px",
+              display: "grid",
+              placeItems: "center",
+              background: "rgba(145,90,255,0.12)",
+              color: "#b78cff",
+              flexShrink: 0
+            }}
+          >
+            <BarChart3 size={18} />
+          </div>
+
+          <div>
+            <b>Historical Analytics</b>
+            <p style={{ marginTop: "5px" }}>
+              Member growth, messages, commands, tickets, moderation
+              activity and heatmaps will become available once JONY OS
+              starts recording server events.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState("Servers");
   const [menu, setMenu] = useState(false);
@@ -642,6 +1098,20 @@ export default function App() {
     }
   }, [user]);
 
+  const fetchServerDetails = async serverId => {
+    const response = await fetch(
+      `/api/server?id=${encodeURIComponent(serverId)}`
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not load server details");
+    }
+
+    return result.server;
+  };
+
   const openServer = async server => {
     setSelectedServer(server);
     setServerDetails(null);
@@ -653,19 +1123,26 @@ export default function App() {
     setMenu(false);
 
     try {
-      const response = await fetch(
-        `/api/server?id=${encodeURIComponent(server.id)}`
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not load server details");
-      }
-
-      setServerDetails(result.server);
+      const details = await fetchServerDetails(server.id);
+      setServerDetails(details);
     } catch (error) {
       setDetailsError(error.message || "Something went wrong");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    if (!selectedServer) return;
+
+    setDetailsLoading(true);
+    setDetailsError("");
+
+    try {
+      const details = await fetchServerDetails(selectedServer.id);
+      setServerDetails(details);
+    } catch (error) {
+      setDetailsError(error.message || "Could not load analytics");
     } finally {
       setDetailsLoading(false);
     }
@@ -884,7 +1361,9 @@ export default function App() {
                   ? "Choose a server to open its management dashboard."
                   : page === "Server Dashboard"
                     ? "Manage and monitor your selected Discord server."
-                    : `Manage your ${page.toLowerCase()} workspace.`}
+                    : page === "Analytics"
+                      ? "Monitor your selected Discord server with live statistics."
+                      : `Manage your ${page.toLowerCase()} workspace.`}
               </p>
             </div>
 
@@ -892,6 +1371,20 @@ export default function App() {
               <button className="primary" onClick={backToServers}>
                 <Server size={16} />
                 Change server
+              </button>
+            )}
+
+            {page === "Analytics" && selectedServer && (
+              <button
+                className="primary"
+                onClick={loadAnalytics}
+                disabled={detailsLoading}
+              >
+                <RefreshCw
+                  size={16}
+                  className={detailsLoading ? "spin" : ""}
+                />
+                {detailsLoading ? "Refreshing..." : "Refresh Analytics"}
               </button>
             )}
           </div>
@@ -1267,13 +1760,14 @@ export default function App() {
           )}
 
           {page === "Analytics" && (
-            <div className="panel placeholder">
-              <BarChart3 />
-              <h2>Analytics overview</h2>
-              <p>
-                Live analytics will be connected in a later stage.
-              </p>
-            </div>
+            <AnalyticsView
+              selectedServer={selectedServer}
+              serverDetails={serverDetails}
+              loading={detailsLoading}
+              error={detailsError}
+              onRefresh={loadAnalytics}
+              onChooseServer={backToServers}
+            />
           )}
 
           {![
@@ -1301,4 +1795,4 @@ export default function App() {
       </main>
     </div>
   );
-}
+            }
