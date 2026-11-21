@@ -384,7 +384,8 @@ function LandingPage({ onLogin }) {
   );
 }
 
-export default function App() {
+18.4%", MessageSquare],
+    ["Bot uptime", "99.9%", "30 days", Activity]export default function App() {
   const [page, setPage] = useState("Dashboard");
   const [menu, setMenu] = useState(false);
   const [enabled, setEnabled] = useState(systems.map(x => x[3]));
@@ -440,8 +441,7 @@ export default function App() {
   const stats = [
     ["Connected servers", "12", "+12.8%", Server],
     ["Total members", "24.8K", "+8.2%", Users],
-    ["Messages handled", "1.2M", "+18.4%", MessageSquare],
-    ["Bot uptime", "99.9%", "30 days", Activity]
+    ["Messages handled", "1.2M", "+
   ];
 
   return (
@@ -680,26 +680,555 @@ export default function App() {
           )}
 
           {page === "Analytics" && (
+
+export default function App() {
+  const [page, setPage] = useState("Servers");
+  const [menu, setMenu] = useState(false);
+  const [enabled, setEnabled] = useState(systems.map(x => x[3]));
+  const [query, setQuery] = useState("");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const [servers, setServers] = useState([]);
+  const [serversLoading, setServersLoading] = useState(false);
+  const [serversError, setServersError] = useState("");
+
+  const [selectedServer, setSelectedServer] = useState(null);
+  const [serverDetails, setServerDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/auth/me")
+      .then(async response => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then(result => {
+        if (active && result?.authenticated && result.user) {
+          setUser(result.user);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const login = () => {
+    window.location.href = "/api/auth/login";
+  };
+
+  const loadServers = async () => {
+    setServersLoading(true);
+    setServersError("");
+
+    try {
+      const response = await fetch("/api/servers");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not load servers");
+      }
+
+      setServers(result.servers || []);
+    } catch (error) {
+      setServersError(error.message || "Something went wrong");
+    } finally {
+      setServersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) loadServers();
+  }, [user]);
+
+  const openServer = async server => {
+    setSelectedServer(server);
+    setServerDetails(null);
+    setDetailsError("");
+    setDetailsLoading(true);
+    setPage("Server Dashboard");
+    setMenu(false);
+
+    try {
+      const response = await fetch(`/api/server?id=${encodeURIComponent(server.id)}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not load server details");
+      }
+
+      setServerDetails(result.server);
+    } catch (error) {
+      setDetailsError(error.message || "Something went wrong");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const backToServers = () => {
+    setSelectedServer(null);
+    setServerDetails(null);
+    setPage("Servers");
+  };
+
+  if (authLoading) {
+    return (
+      <div className="auth-loading">
+        <div className="loading-crown"><Crown /></div>
+        <h2>JONY <em>OS</em></h2>
+        <p>Preparing your experience...</p>
+        <div className="loading-line"><span /></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LandingPage onLogin={login} />;
+  }
+
+  const avatar = getAvatar(user);
+  const displayName = user?.global_name || user?.username || "Guest";
+
+  const navigationGroups = [
+    {
+      title: "OVERVIEW",
+      links: [["Servers", Server], ["Analytics", BarChart3]]
+    },
+    {
+      title: "MANAGEMENT",
+      links: [
+        ["Systems", SlidersHorizontal],
+        ["Moderation", Shield],
+        ["Tickets", Ticket],
+        ["Welcome", Users],
+        ["Logs", ClipboardList],
+        ["Economy", Wallet]
+      ]
+    },
+    {
+      title: "PREFERENCES",
+      links: [["Settings", Settings]]
+    }
+  ];
+
+  const pageTitle = page === "Server Dashboard"
+    ? selectedServer?.name || "Server Dashboard"
+    : page;
+
+  return (
+    <div className="app">
+      {menu && <div className="scrim" onClick={() => setMenu(false)} />}
+
+      <aside className={menu ? "sidebar show" : "sidebar"}>
+        <div className="brand">
+          <div className="brand-icon"><Crown /></div>
+          <div>
+            <b>JONY <em>OS</em></b>
+            <small>DISCORD BOT PLATFORM</small>
+          </div>
+          <button className="close" onClick={() => setMenu(false)}>
+            <X />
+          </button>
+        </div>
+
+        <button className="workspace" onClick={backToServers}>
+          <div className="server-logo">
+            {selectedServer?.icon
+              ? <img src={selectedServer.icon} alt="" />
+              : "J"}
+          </div>
+          <div>
+            <b>{selectedServer?.name || "JONY Workspace"}</b>
+            <small>{selectedServer ? "Selected server" : "Server workspace"}</small>
+          </div>
+          <ChevronDown size={15} />
+        </button>
+
+        {navigationGroups.map(group => (
+          <section className="nav-group" key={group.title}>
+            <label>{group.title}</label>
+            {group.links.map(([name, Icon]) => (
+              <button
+                className={page === name ? "nav active" : "nav"}
+                key={name}
+                onClick={() => {
+                  setPage(name);
+                  setMenu(false);
+                }}
+              >
+                <Icon size={17} />
+                {name}
+              </button>
+            ))}
+          </section>
+        ))}
+
+        {selectedServer && (
+          <section className="nav-group">
+            <label>SELECTED SERVER</label>
+            <button
+              className={page === "Server Dashboard" ? "nav active" : "nav"}
+              onClick={() => {
+                setPage("Server Dashboard");
+                setMenu(false);
+              }}
+            >
+              <LayoutDashboard size={17} />
+              Server Overview
+            </button>
+            <button className="nav" onClick={backToServers}>
+              <Server size={17} />
+              Change Server
+            </button>
+          </section>
+        )}
+
+        <div className="help">
+          <b>Need a hand?</b>
+          <p>Explore guides and get help setting up your bot.</p>
+          <span>JONY OS Support ↗</span>
+        </div>
+
+        <div className="user">
+          {avatar ? (
+            <img className="avatar" src={avatar} alt="Discord avatar" />
+          ) : (
+            <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
+          )}
+          <div>
+            <b>{displayName}</b>
+            <small>Discord Account</small>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header>
+          <button className="hamb" onClick={() => setMenu(true)}>
+            <Menu />
+          </button>
+          <div className="crumb">
+            Workspace　›　<b>{pageTitle}</b>
+          </div>
+          <div className="right">
+            <span className="online">● Connected to Discord</span>
+            <button className="round" onClick={loadServers} title="Refresh servers">
+              <Activity />
+            </button>
+            {avatar ? (
+              <img className="avatar" src={avatar} alt="Discord avatar" />
+            ) : (
+              <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
+            )}
+          </div>
+        </header>
+
+        <div className="content">
+          <div className="heading">
+            <div>
+              <label>JONY OS / {pageTitle.toUpperCase()}</label>
+              <h1>
+                {page === "Servers"
+                  ? "Your Discord servers"
+                  : page === "Server Dashboard"
+                    ? pageTitle
+                    : page}
+              </h1>
+              <p>
+                {page === "Servers"
+                  ? "Choose a server to open its management dashboard."
+                  : page === "Server Dashboard"
+                    ? "Manage and monitor your selected Discord server."
+                    : `Manage your ${page.toLowerCase()} workspace.`}
+              </p>
+            </div>
+
+            {page === "Server Dashboard" && (
+              <button className="primary" onClick={backToServers}>
+                <Server size={16} /> Change server
+              </button>
+            )}
+          </div>
+
+          {page === "Servers" && (
+            <>
+              <div className="server-toolbar">
+                <div>
+                  <span className="live">
+                    ● {servers.length} MANAGEABLE SERVERS
+                  </span>
+                  <p>Only servers where you have Administrator permission or ownership are shown.</p>
+                </div>
+                <button className="primary" onClick={loadServers} disabled={serversLoading}>
+                  <Activity size={16} />
+                  {serversLoading ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+
+              {serversLoading && (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading your servers...</h2>
+                  <p>Connecting to Discord and checking your server access.</p>
+                </div>
+              )}
+
+              {!serversLoading && serversError && (
+                <div className="panel placeholder">
+                  <Shield />
+                  <h2>Couldn't load your servers</h2>
+                  <p>{serversError}</p>
+                  <button className="primary" onClick={loadServers}>
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {!serversLoading && !serversError && servers.length === 0 && (
+                <div className="panel placeholder">
+                  <Server />
+                  <h2>No manageable servers found</h2>
+                  <p>
+                    Make sure you're the server owner or have Administrator
+                    permission in at least one Discord server.
+                  </p>
+                  <button className="primary" onClick={loadServers}>
+                    Refresh servers
+                  </button>
+                </div>
+              )}
+
+              {!serversLoading && !serversError && servers.length > 0 && (
+                <div className="real-server-grid">
+                  {servers.map(server => (
+                    <article className="real-server-card" key={server.id}>
+                      <div className="real-server-top">
+                        {server.icon ? (
+                          <img src={server.icon} alt="" className="real-server-icon" />
+                        ) : (
+                          <div className="real-server-icon fallback">
+                            {server.name?.slice(0, 1).toUpperCase() || "S"}
+                          </div>
+                        )}
+                        <span className={server.isBotAdded ? "bot-badge added" : "bot-badge missing"}>
+                          <span />
+                          {server.isBotAdded ? "BOT CONNECTED" : "BOT NOT ADDED"}
+                        </span>
+                      </div>
+
+                      <h3>{server.name}</h3>
+                      <p className="real-server-id">ID: {server.id}</p>
+
+                      <div className="real-server-meta">
+                        <span><Users size={15} /> {server.memberCount != null ? server.memberCount.toLocaleString() : "—"} members</span>
+                        <span>{server.isOwner ? "Owner" : "Administrator"}</span>
+                      </div>
+
+                      {server.isBotAdded ? (
+                        <button className="server-manage" onClick={() => openServer(server)}>
+                          Manage Server <ArrowUpRight size={16} />
+                        </button>
+                      ) : (
+                        <a
+                          className="server-manage invite"
+                          href={server.inviteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Invite JONY OS <ArrowUpRight size={16} />
+                        </a>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {page === "Server Dashboard" && (
+            <>
+              <div className="server-detail-actions">
+                <button className="link" onClick={backToServers}>
+                  <ChevronRight size={15} /> Back to servers
+                </button>
+                {selectedServer?.icon && (
+                  <img src={selectedServer.icon} alt="" className="detail-server-icon" />
+                )}
+              </div>
+
+              {detailsLoading && (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading server dashboard...</h2>
+                  <p>Retrieving server information from Discord.</p>
+                </div>
+              )}
+
+              {detailsError && (
+                <div className="panel placeholder">
+                  <Shield />
+                  <h2>Unable to open this server</h2>
+                  <p>{detailsError}</p>
+                  <button className="primary" onClick={() => openServer(selectedServer)}>
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {!detailsLoading && !detailsError && serverDetails && (
+                <>
+                  <div className="server-detail-hero panel">
+                    <div>
+                      <span className="live">● BOT CONNECTED</span>
+                      <h2>{serverDetails.name}</h2>
+                      <p>Your server workspace is ready.</p>
+                    </div>
+                    {serverDetails.icon ? (
+                      <img src={serverDetails.icon} alt="" className="detail-server-icon large" />
+                    ) : (
+                      <div className="detail-server-icon large fallback">
+                        {serverDetails.name?.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="stats">
+                    {[
+                      ["Total members", serverDetails.memberCount?.toLocaleString() ?? "—", Users],
+                      ["Online members", serverDetails.onlineCount?.toLocaleString() ?? "—", Activity],
+                      ["Channels", serverDetails.channelCount ?? 0, MessageSquare],
+                      ["Roles", serverDetails.roleCount ?? 0, Shield]
+                    ].map(([label, value, Icon]) => (
+                      <div className="stat" key={label}>
+                        <div className="stat-top">
+                          <span className="stat-icon"><Icon /></span>
+                        </div>
+                        <strong>{value}</strong>
+                        <p>{label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid">
+                    <section className="panel">
+                      <div className="panel-head">
+                        <div>
+                          <b>Server channels</b>
+                          <p>Channels returned by Discord</p>
+                        </div>
+                        <span className="live">{serverDetails.channels?.length || 0}</span>
+                      </div>
+                      <div className="server-data-list">
+                        {(serverDetails.channels || []).slice(0, 12).map(channel => (
+                          <div className="server-data-row" key={channel.id}>
+                            <MessageSquare size={16} />
+                            <span>{channel.name}</span>
+                            <small>{channel.type === 4 ? "Category" : "Channel"}</small>
+                          </div>
+                        ))}
+                        {!serverDetails.channels?.length && <p>No channels available.</p>}
+                      </div>
+                    </section>
+
+                    <section className="panel">
+                      <div className="panel-head">
+                        <div>
+                          <b>Server roles</b>
+                          <p>Roles returned by Discord</p>
+                        </div>
+                        <span className="live">{serverDetails.roles?.length || 0}</span>
+                      </div>
+                      <div className="server-data-list">
+                        {(serverDetails.roles || []).slice(0, 12).map(role => (
+                          <div className="server-data-row" key={role.id}>
+                            <Shield size={16} />
+                            <span>{role.name}</span>
+                            <small>{role.position}</small>
+                          </div>
+                        ))}
+                        {!serverDetails.roles?.length && <p>No roles available.</p>}
+                      </div>
+                    </section>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {page === "Systems" && (
+            <>
+              <div className="toolbar">
+                <div className="search">
+                  <Search size={16} />
+                  <input
+                    placeholder="Find a system..."
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                  />
+                </div>
+                <span className="live">{enabled.filter(Boolean).length} ACTIVE</span>
+              </div>
+
+              <div className="system-grid">
+                {systems.map(([name, desc, Icon], i) =>
+                  name.toLowerCase().includes(query.toLowerCase()) && (
+                    <section className="panel system" key={name}>
+                      <div className="system-top">
+                        <span className="system-icon"><Icon /></span>
+                        <input
+                          type="checkbox"
+                          checked={enabled[i]}
+                          onChange={() => setEnabled(old =>
+                            old.map((value, index) => i === index ? !value : value)
+                          )}
+                        />
+                      </div>
+                      <b>{name}</b>
+                      <p>{desc}</p>
+                      <div className="system-bottom">
+                        <small className={enabled[i] ? "green" : "muted"}>
+                          ● {enabled[i] ? "Enabled" : "Disabled"}
+                        </small>
+                        <button className="link">Configure ›</button>
+                      </div>
+                    </section>
+                  )
+                )}
+              </div>
+            </>
+          )}
+
+          {page === "Analytics" && (
             <div className="panel placeholder">
-              <BarChart3 /><h2>Analytics overview</h2>
-              <p>Charts will show real server activity after connecting the bot and database.</p>
+              <BarChart3 />
+              <h2>Analytics overview</h2>
+              <p>Live analytics will be connected in a later stage.</p>
             </div>
           )}
 
-          {!["Dashboard", "Systems", "Servers", "Analytics"].includes(page) && (
+          {!["Servers", "Server Dashboard", "Systems", "Analytics"].includes(page) && (
             <div className="panel placeholder">
-              <Settings /><h2>{page} settings</h2>
-              <p>This section is included in the dashboard layout. We'll connect its working controls in the next stage.</p>
+              <Settings />
+              <h2>{page} settings</h2>
+              <p>This section will be connected to the selected server in a later stage.</p>
             </div>
           )}
 
           <footer>
             © 2026 JONY OS
             <span>Built for better communities.</span>
-            <small>PREVIEW V1.0</small>
+            <small>CONNECTED V1.0</small>
           </footer>
         </div>
       </main>
     </div>
   );
-       }
+}
