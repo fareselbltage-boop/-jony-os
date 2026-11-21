@@ -19,52 +19,226 @@ function getCookies(header = "") {
   return cookies;
 }
 
-async function checkBotInGuild(guildId, botToken) {
+function getRetryAfter(response, data) {
+  const headerValue = Number(response.headers.get("retry-after"));
+  const bodyValue = Number(data?.retry_after);
+
+  const seconds =
+    Number.isFinite(bodyValue) && bodyValue > 0
+      ? bodyValue
+      : Number.isFinite(headerValue) && headerValue > 0
+        ? headerValue
+        : 1;
+
+  return Math.ceil(seconds);
+}
+
+async function fetchDiscord(url, headers) {
   try {
-    const response = await fetch(
-      `https://discord.com/api/v10/guilds/${guildId}?with_counts=true`,
-      {
-        headers: {
-          Authorization: `Bot ${botToken}`
-        }
-      }
-    );
-
-    if (!response.ok) {
-      return {
-        isBotAdded: false,
-        memberCount: null
-      };
-    }
-
-    const guild = await response.json();
+    const response = await fetch(url, { headers });
+    const data = await response.json().catch(() => null);
 
     return {
-      isBotAdded: true,
-      memberCount: guild.approximate_member_count ?? null
+      ok: response.ok,
+      status: response.status,
+      data,
+      retryAfter: response.status === 429
+        ? getRetryAfter(response, data)
+        : null
     };
-  } catch {
+  } catch (error) {
+    console.error("Discord request failed:", error.message);
+
     return {
-      isBotAdded: false,
-      memberCount: null
+      ok: false,
+      status: 0,
+      data: null,
+      retryAfter: null
     };
   }
 }
 
+async function refreshDiscordToken(refreshToken) {
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    return null;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken
+    });
+
+    const response = await fetch(
+      "https://discord.com/api/oauth2/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      }
+    );
+
+    const tokens = await response.json().catch(() => null);
+
+    if (!response.ok || !tokens?.access_token) {
+      console.error("Discord token refresh failed:", {
+        status: response.status,
+        error: tokens?.error
+      });
+
+      return null;
+    }
+
+    return tokens;
+  } catch (error) {
+    console.error("Discord token refresh request failed:", error.message);
+    return null;
+  }
+}
+
+function saveSessionCookies(res, tokens, oldRefreshToken) {
+  const refreshToken = tokens.refresh_token || oldRefreshToken;
+  const expiresIn = Number(tokens.expires_in) || 604800;
+
+  res.setHeader("Set-Cookie", [
+    `jony_discord_token=${encodeURIComponent(tokens.access_token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${expiresIn}`,
+    `jony_discord_refresh_token=${encodeURIComponent(refreshToken)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`
+  ]);
+}
+
+function clearSessionCookies(res) {
+  res.setHeader("Set-Cookie", [
+    "jony_discord_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
+    "jony_discord_refresh_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+  ]);
+}
+
+function sendDiscordError(res, result, fallback) {
+  if (result.status === 429) {
+    return res.status(429).json({
+      error: "Discord is rate limiting requests. Please wait and try again.",
+      retryAfter: result.retryAfter || 1
+    });
+  }
+
+  if (result.status === 401) {
+    clearSessionCookies(res);
+
+    return res.status(401).json({
+      error: "Discord session expired. Please login again."
+    });
+  }
+
+  console.error("Discord API error:", {
+    status: result.status,
+    message: result.data?.message,
+    code: result.data?.code
+  });
+
+  return res.status(502).json({
+    error: fallback,
+    discordStatus: result.status,
+    discordError: result.data?.message || "Unknown Discord error"
+  });
+}
+
+const botStatusCache = new Map();
+const BOT_CACHE_TIME = 60 * 1000;
+
+async function checkBotInGuild(guildId, botToken) {
+  const cached = botStatusCache.get(guildId);
+
+  if (cached && Date.now() - cached.time < BOT_CACHE_TIME) {
+    return {
+      ok: true,
+      ...cached.data,
+      cached: true
+    };
+  }
+
+  const result = await fetchDiscord(
+    `https://discord.com/api/v10/guilds/${guildId}?with_counts=true`,
+    {
+      Authorization: `Bot ${botToken}`
+    }
+  );
+
+  if (result.status === 429) {
+    return {
+      ok: false,
+      status: 429,
+      retryAfter: result.retryAfter
+    };
+  }
+
+  if (result.status === 404) {
+    const data = {
+      isBotAdded: false,
+      memberCount: null
+    };
+
+    botStatusCache.set(guildId, {
+      time: Date.now(),
+      data
+    });
+
+    return {
+      ok: true,
+      ...data
+    };
+  }
+
+  if (!result.ok || !result.data) {
+    return {
+      ok: false,
+      status: result.status || 502,
+      message: result.data?.message || "Could not check bot status"
+    };
+  }
+
+  const data = {
+    isBotAdded: true,
+    memberCount: result.data.approximate_member_count ?? null
+  };
+
+  botStatusCache.set(guildId, {
+    time: Date.now(),
+    data
+  });
+
+  return {
+    ok: true,
+    ...data
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+
     return res.status(405).json({
       error: "Method not allowed"
     });
   }
 
+  res.setHeader("Cache-Control", "no-store");
+
   const cookies = getCookies(req.headers.cookie || "");
-  const userToken = cookies.jony_discord_token;
+
+  let userToken = cookies.jony_discord_token;
+  const refreshToken = cookies.jony_discord_refresh_token;
 
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const clientId = process.env.DISCORD_CLIENT_ID;
 
-  if (!userToken) {
+  if (!userToken && !refreshToken) {
     return res.status(401).json({
       error: "Not authenticated"
     });
@@ -77,42 +251,68 @@ export default async function handler(req, res) {
   }
 
   try {
-    const discordResponse = await fetch(
-      "https://discord.com/api/v10/users/@me/guilds?with_counts=true",
-      {
-        headers: {
+    const guildsUrl =
+      "https://discord.com/api/v10/users/@me/guilds?with_counts=true";
+
+    let discordResult = userToken
+      ? await fetchDiscord(guildsUrl, {
           Authorization: `Bearer ${userToken}`
-        }
+        })
+      : null;
+
+    if (!discordResult || discordResult.status === 401) {
+      if (!refreshToken) {
+        clearSessionCookies(res);
+
+        return res.status(401).json({
+          error: "Discord session expired. Please login again."
+        });
       }
-    );
 
-    if (discordResponse.status === 401) {
-      return res.status(401).json({
-        error: "Discord session expired. Please login again."
+      const newTokens = await refreshDiscordToken(refreshToken);
+
+      if (!newTokens) {
+        clearSessionCookies(res);
+
+        return res.status(401).json({
+          error: "Discord session expired. Please login again."
+        });
+      }
+
+      userToken = newTokens.access_token;
+      saveSessionCookies(res, newTokens, refreshToken);
+
+      discordResult = await fetchDiscord(guildsUrl, {
+        Authorization: `Bearer ${userToken}`
       });
     }
 
-    if (!discordResponse.ok) {
+    if (!discordResult.ok) {
+      return sendDiscordError(
+        res,
+        discordResult,
+        "Could not retrieve Discord servers"
+      );
+    }
+
+    if (!Array.isArray(discordResult.data)) {
       return res.status(502).json({
-        error: "Could not retrieve Discord servers"
+        error: "Invalid Discord server response"
       });
     }
 
-    const userGuilds = await discordResponse.json();
-
-    const adminGuilds = userGuilds.filter(guild => {
+    const adminGuilds = discordResult.data.filter(guild => {
       try {
         const permissions = BigInt(guild.permissions || "0");
-        const isAdmin = (permissions & 8n) === 8n;
 
-        return guild.owner || isAdmin;
+        return guild.owner === true || (permissions & 8n) === 8n;
       } catch {
         return false;
       }
     });
 
     const servers = [];
-    const concurrency = 5;
+    const concurrency = 2;
 
     for (let i = 0; i < adminGuilds.length; i += concurrency) {
       const batch = adminGuilds.slice(i, i + concurrency);
@@ -123,6 +323,16 @@ export default async function handler(req, res) {
             guild.id,
             botToken
           );
+
+          if (!botStatus.ok) {
+            return {
+              guildId: guild.id,
+              error: true,
+              status: botStatus.status,
+              retryAfter: botStatus.retryAfter,
+              message: botStatus.message
+            };
+          }
 
           const inviteParams = new URLSearchParams({
             client_id: clientId,
@@ -149,6 +359,21 @@ export default async function handler(req, res) {
         })
       );
 
+      const failed = results.find(item => item.error);
+
+      if (failed) {
+        if (failed.status === 429) {
+          return res.status(429).json({
+            error: "Discord is rate limiting requests. Please wait and try again.",
+            retryAfter: failed.retryAfter || 1
+          });
+        }
+
+        return res.status(502).json({
+          error: "Could not check whether the bot is in every server."
+        });
+      }
+
       servers.push(...results);
     }
 
@@ -157,6 +382,8 @@ export default async function handler(req, res) {
       total: servers.length
     });
   } catch (error) {
+    console.error("Servers API error:", error);
+
     return res.status(500).json({
       error: "Internal server error"
     });
