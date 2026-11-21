@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -39,6 +40,32 @@ const systems = [
   ["Leveling", "Reward members for being active.", Activity, false],
   ["Suggestions", "Collect and vote on community ideas.", MessageSquare, true]
 ];
+
+const systemKeys = [
+  "moderation",
+  "tickets",
+  "welcome",
+  "automod",
+  "leveling",
+  "suggestions"
+];
+
+const DEFAULT_SETTINGS = {
+  prefix: "-",
+  systems: {
+    moderation: true,
+    tickets: true,
+    welcome: true,
+    automod: false,
+    leveling: false,
+    suggestions: true
+  },
+  moderation: {},
+  tickets: {},
+  welcome: {},
+  economy: {},
+  logs: {}
+};
 
 function getAvatar(user) {
   if (!user?.avatar) return null;
@@ -997,7 +1024,6 @@ function AnalyticsView({
 export default function App() {
   const [page, setPage] = useState("Servers");
   const [menu, setMenu] = useState(false);
-  const [enabled, setEnabled] = useState(systems.map(x => x[3]));
   const [query, setQuery] = useState("");
 
   const [user, setUser] = useState(null);
@@ -1014,6 +1040,12 @@ export default function App() {
 
   const [rolePage, setRolePage] = useState(1);
   const [channelPage, setChannelPage] = useState(1);
+
+  const [guildSettings, setGuildSettings] = useState(DEFAULT_SETTINGS);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+  const [settingsMessage, setSettingsMessage] = useState("");
 
   const rolesPerPage = 8;
   const channelsPerPage = 8;
@@ -1112,6 +1144,92 @@ export default function App() {
     return result.server;
   };
 
+  const loadGuildSettings = async serverId => {
+    setSettingsLoading(true);
+    setSettingsError("");
+    setSettingsMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/settings?id=${encodeURIComponent(serverId)}`
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not load settings");
+      }
+
+      const saved = result.settings || {};
+
+      setGuildSettings({
+        ...DEFAULT_SETTINGS,
+        ...saved,
+        systems: {
+          ...DEFAULT_SETTINGS.systems,
+          ...(saved.systems || {})
+        }
+      });
+    } catch (error) {
+      setSettingsError(error.message || "Could not load settings");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const saveGuildSettings = async settingsToSave => {
+    if (!selectedServer) return false;
+
+    setSettingsSaving(true);
+    setSettingsError("");
+    setSettingsMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/settings?id=${encodeURIComponent(selectedServer.id)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            settings: settingsToSave
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not save settings");
+      }
+
+      setSettingsMessage("Settings saved successfully.");
+      return true;
+    } catch (error) {
+      setSettingsError(error.message || "Could not save settings");
+      return false;
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const updateSystem = async (key, value) => {
+    const nextSettings = {
+      ...guildSettings,
+      systems: {
+        ...guildSettings.systems,
+        [key]: value
+      }
+    };
+
+    setGuildSettings(nextSettings);
+
+    if (!selectedServer) return;
+
+    await saveGuildSettings(nextSettings);
+  };
+
   const openServer = async server => {
     setSelectedServer(server);
     setServerDetails(null);
@@ -1121,6 +1239,9 @@ export default function App() {
     setChannelPage(1);
     setPage("Server Dashboard");
     setMenu(false);
+
+    setGuildSettings(DEFAULT_SETTINGS);
+    loadGuildSettings(server.id);
 
     try {
       const details = await fetchServerDetails(server.id);
@@ -1152,6 +1273,8 @@ export default function App() {
     setSelectedServer(null);
     setServerDetails(null);
     setDetailsError("");
+    setSettingsError("");
+    setSettingsMessage("");
     setRolePage(1);
     setChannelPage(1);
     setPage("Servers");
@@ -1363,7 +1486,9 @@ export default function App() {
                     ? "Manage and monitor your selected Discord server."
                     : page === "Analytics"
                       ? "Monitor your selected Discord server with live statistics."
-                      : `Manage your ${page.toLowerCase()} workspace.`}
+                      : page === "Settings"
+                        ? "Configure and save your server preferences."
+                        : `Manage your ${page.toLowerCase()} workspace.`}
               </p>
             </div>
 
@@ -1708,55 +1833,222 @@ export default function App() {
 
           {page === "Systems" && (
             <>
-              <div className="toolbar">
-                <div className="search">
-                  <Search size={16} />
-
-                  <input
-                    placeholder="Find a system..."
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                  />
+              {!selectedServer ? (
+                <div className="panel placeholder">
+                  <Settings />
+                  <h2>Select a server first</h2>
+                  <p>Choose a server before changing its systems.</p>
+                  <button className="primary" onClick={backToServers}>
+                    <Server size={16} />
+                    Choose Server
+                  </button>
                 </div>
+              ) : settingsLoading ? (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading systems...</h2>
+                  <p>Retrieving saved settings from MongoDB.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="toolbar">
+                    <div className="search">
+                      <Search size={16} />
 
-                <span className="live">
-                  {enabled.filter(Boolean).length} ACTIVE
-                </span>
-              </div>
+                      <input
+                        placeholder="Find a system..."
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                      />
+                    </div>
 
-              <div className="system-grid">
-                {systems.map(([name, desc, Icon], i) =>
-                  name.toLowerCase().includes(query.toLowerCase()) && (
-                    <section className="panel system" key={name}>
-                      <div className="system-top">
-                        <span className="system-icon"><Icon /></span>
+                    <span className="live">
+                      {Object.values(guildSettings.systems).filter(Boolean).length} ACTIVE
+                    </span>
+                  </div>
 
-                        <input
-                          type="checkbox"
-                          checked={enabled[i]}
-                          onChange={() => setEnabled(old =>
-                            old.map((value, index) =>
-                              i === index ? !value : value
-                            )
-                          )}
-                        />
-                      </div>
+                  {settingsError && (
+                    <p style={{ color: "#ff7777", marginBottom: "12px" }}>
+                      {settingsError}
+                    </p>
+                  )}
 
-                      <b>{name}</b>
-                      <p>{desc}</p>
+                  {settingsMessage && (
+                    <p style={{ color: "#73e6a2", marginBottom: "12px" }}>
+                      {settingsMessage}
+                    </p>
+                  )}
 
-                      <div className="system-bottom">
-                        <small className={enabled[i] ? "green" : "muted"}>
-                          ● {enabled[i] ? "Enabled" : "Disabled"}
-                        </small>
+                  <div className="system-grid">
+                    {systems.map(([name, desc, Icon], i) =>
+                      name.toLowerCase().includes(query.toLowerCase()) && (
+                        <section className="panel system" key={name}>
+                          <div className="system-top">
+                            <span className="system-icon"><Icon /></span>
 
-                        <button className="link">Configure ›</button>
-                      </div>
-                    </section>
-                  )
-                )}
-              </div>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(guildSettings.systems[systemKeys[i]])}
+                              disabled={settingsSaving}
+                              onChange={e =>
+                                updateSystem(systemKeys[i], e.target.checked)
+                              }
+                            />
+                          </div>
+
+                          <b>{name}</b>
+                          <p>{desc}</p>
+
+                          <div className="system-bottom">
+                            <small className={guildSettings.systems[systemKeys[i]] ? "green" : "muted"}>
+                              ● {guildSettings.systems[systemKeys[i]] ? "Enabled" : "Disabled"}
+                            </small>
+
+                            <button
+                              className="link"
+                              onClick={() => setPage("Settings")}
+                            >
+                              Configure ›
+                            </button>
+                          </div>
+                        </section>
+                      )
+                    )}
+                  </div>
+                </>
+              )}
             </>
+          )}
+
+          {page === "Settings" && (
+            <div className="settings-page">
+              {!selectedServer ? (
+                <div className="panel placeholder">
+                  <Settings />
+                  <h2>Select a server first</h2>
+                  <p>Choose a server to manage its settings.</p>
+                  <button className="primary" onClick={backToServers}>
+                    <Server size={16} />
+                    Choose Server
+                  </button>
+                </div>
+              ) : settingsLoading ? (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading settings...</h2>
+                  <p>Retrieving saved settings from MongoDB.</p>
+                </div>
+              ) : (
+                <>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <div>
+                        <b>General Settings</b>
+                        <p>Configure the basic settings for this server.</p>
+                      </div>
+                      <Settings />
+                    </div>
+
+                    <div style={{ marginTop: "22px" }}>
+                      <label style={{ display: "block", marginBottom: "9px" }}>
+                        Command Prefix
+                      </label>
+
+                      <input
+                        value={guildSettings.prefix}
+                        maxLength={5}
+                        onChange={e =>
+                          setGuildSettings(old => ({
+                            ...old,
+                            prefix: e.target.value
+                          }))
+                        }
+                        placeholder="-"
+                        style={{
+                          width: "100%",
+                          maxWidth: "300px",
+                          padding: "12px",
+                          borderRadius: "9px",
+                          border: "1px solid rgba(145,90,255,0.3)",
+                          background: "rgba(255,255,255,0.04)",
+                          color: "#fff",
+                          outline: "none"
+                        }}
+                      />
+
+                      <p style={{ marginTop: "8px", color: "#8f899b", fontSize: "12px" }}>
+                        Current prefix: {guildSettings.prefix || "Not set"}
+                      </p>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>System Configuration</b>
+                        <p>Choose which bot systems should be enabled.</p>
+                      </div>
+                      <SlidersHorizontal />
+                    </div>
+
+                    <div className="server-data-list" style={{ marginTop: "15px" }}>
+                      {systems.map(([name, description, Icon], index) => {
+                        const key = systemKeys[index];
+                        const checked = Boolean(guildSettings.systems[key]);
+
+                        return (
+                          <div className="server-data-row" key={key}>
+                            <Icon size={18} />
+
+                            <div style={{ flex: 1 }}>
+                              <b>{name}</b>
+                              <small style={{ display: "block", marginTop: "4px" }}>
+                                {description}
+                              </small>
+                            </div>
+
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={e => {
+                                setGuildSettings(old => ({
+                                  ...old,
+                                  systems: {
+                                    ...old.systems,
+                                    [key]: e.target.checked
+                                  }
+                                }));
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {settingsError && (
+                    <p style={{ color: "#ff7777", marginTop: "15px" }}>
+                      {settingsError}
+                    </p>
+                  )}
+
+                  {settingsMessage && (
+                    <p style={{ color: "#73e6a2", marginTop: "15px" }}>
+                      {settingsMessage}
+                    </p>
+                  )}
+
+                  <button
+                    className="primary"
+                    style={{ marginTop: "18px" }}
+                    onClick={() => saveGuildSettings(guildSettings)}
+                    disabled={settingsSaving}
+                  >
+                    {settingsSaving ? "Saving..." : "Save Settings"}
+                  </button>
+                </>
+              )}
+            </div>
           )}
 
           {page === "Analytics" && (
@@ -1774,7 +2066,8 @@ export default function App() {
             "Servers",
             "Server Dashboard",
             "Systems",
-            "Analytics"
+            "Analytics",
+            "Settings"
           ].includes(page) && (
             <div className="panel placeholder">
               <Settings />
@@ -1795,4 +2088,4 @@ export default function App() {
       </main>
     </div>
   );
-            }
+}
