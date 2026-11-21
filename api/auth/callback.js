@@ -1,3 +1,4 @@
+
 function getCookies(header = "") {
   const cookies = {};
 
@@ -19,10 +20,18 @@ function getCookies(header = "") {
   return cookies;
 }
 
+function clearStateCookie(res) {
+  res.setHeader("Set-Cookie", [
+    "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+  ]);
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).send("Method not allowed");
   }
+
+  res.setHeader("Cache-Control", "no-store");
 
   const cookies = getCookies(req.headers.cookie || "");
   const { code, state } = req.query;
@@ -30,16 +39,17 @@ export default async function handler(req, res) {
   const savedState = cookies.jony_oauth_state;
 
   if (
-    !code ||
-    !state ||
+    typeof code !== "string" ||
+    typeof state !== "string" ||
+    typeof savedState !== "string" ||
     !savedState ||
     state !== savedState
   ) {
-    res.setHeader("Set-Cookie",
-      "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
-    );
+    clearStateCookie(res);
 
-    return res.status(400).send("Invalid OAuth state.");
+    return res.status(400).send(
+      "Invalid OAuth state. Please open the production website and try again."
+    );
   }
 
   const clientId = process.env.DISCORD_CLIENT_ID;
@@ -96,10 +106,10 @@ export default async function handler(req, res) {
 
     return res.redirect("/");
   } catch (error) {
-    res.setHeader("Set-Cookie",
-      "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
-    );
+    clearStateCookie(res);
 
-    return res.status(500).send("Discord login failed. Please try again.");
+    return res.status(500).send(
+      "Discord login failed. Please try again."
+    );
   }
 }
