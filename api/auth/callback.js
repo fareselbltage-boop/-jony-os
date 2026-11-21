@@ -1,24 +1,39 @@
+function getCookies(header = "") {
+  const cookies = {};
+
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+
+    if (index === -1) continue;
+
+    const name = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+
+    try {
+      cookies[name] = decodeURIComponent(value);
+    } catch {
+      cookies[name] = value;
+    }
+  }
+
+  return cookies;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).send("Method not allowed");
   }
 
-  const cookies = Object.fromEntries(
-    (req.headers.cookie || "")
-      .split(";")
-      .map(item => item.trim().split(/=(.*)/s))
-      .filter(item => item.length === 2)
-      .map(([key, value]) => [key, decodeURIComponent(value)])
-  );
-
+  const cookies = getCookies(req.headers.cookie || "");
   const { code, state } = req.query;
+
+  const savedState = cookies.jony_oauth_state;
 
   if (
     !code ||
     !state ||
-    !cookies.jony_oauth_state ||
-    state !== cookies.jony_oauth_state
+    !savedState ||
+    state !== savedState
   ) {
     res.setHeader("Set-Cookie",
       "jony_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
