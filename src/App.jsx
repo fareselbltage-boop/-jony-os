@@ -1,47 +1,31 @@
 import React, { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Server, BarChart3, Shield, Ticket, Users,
-  ClipboardList, Wallet, Settings, Bell, Search, ChevronDown,
-  Activity, MessageSquare, Sparkles, Crown, Menu, X, Check,
-  SlidersHorizontal, ArrowUpRight, ShieldCheck, Zap, Lock, Bot,
+  LayoutDashboard,
+  Server,
+  BarChart3,
+  Shield,
+  Ticket,
+  Users,
+  ClipboardList,
+  Wallet,
+  Settings,
+  Bell,
+  Search,
+  ChevronDown,
+  Activity,
+  MessageSquare,
+  Sparkles,
+  Crown,
+  Menu,
+  X,
+  Check,
+  SlidersHorizontal,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap,
+  Lock,
   ChevronRight
 } from "lucide-react";
-import {
-  AreaChart, Area, ResponsiveContainer, CartesianGrid,
-  XAxis, YAxis, Tooltip
-} from "recharts";
-
-const data = [
-  { day: "Mon", members: 420 },
-  { day: "Tue", members: 610 },
-  { day: "Wed", members: 540 },
-  { day: "Thu", members: 890 },
-  { day: "Fri", members: 720 },
-  { day: "Sat", members: 1120 },
-  { day: "Sun", members: 980 }
-];
-
-const groups = [
-  {
-    title: "OVERVIEW",
-    links: [["Dashboard", LayoutDashboard], ["Servers", Server], ["Analytics", BarChart3]]
-  },
-  {
-    title: "MANAGEMENT",
-    links: [
-      ["Systems", SlidersHorizontal],
-      ["Moderation", Shield],
-      ["Tickets", Ticket],
-      ["Welcome", Users],
-      ["Logs", ClipboardList],
-      ["Economy", Wallet]
-    ]
-  },
-  {
-    title: "PREFERENCES",
-    links: [["Settings", Settings]]
-  }
-];
 
 const systems = [
   ["Moderation", "Protect your community with moderation tools.", Shield, true],
@@ -54,7 +38,9 @@ const systems = [
 
 function getAvatar(user) {
   if (!user?.avatar) return null;
+
   const extension = user.avatar.startsWith("a_") ? "gif" : "png";
+
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${extension}?size=128`;
 }
 
@@ -102,7 +88,7 @@ function LandingPage({ onLogin }) {
   const faqs = [
     [
       "What is JONY OS?",
-      "JONY OS is a dashboard concept for managing Discord communities and their bot systems from one place."
+      "JONY OS is a dashboard for managing Discord communities and their bot systems from one place."
     ],
     [
       "How do I sign in?",
@@ -110,11 +96,11 @@ function LandingPage({ onLogin }) {
     ],
     [
       "Can I manage multiple servers?",
-      "The dashboard is designed to support server management. Actual server controls will become available as the bot and API integrations are connected."
+      "Yes. The dashboard supports multiple servers where you have ownership or Administrator permission."
     ],
     [
       "Are all dashboard statistics real?",
-      "Some values currently shown in the preview are demonstration data. Live statistics require the backend and Discord bot integration."
+      "Server information is retrieved through the connected Discord API. Some future features are still being developed."
     ],
     [
       "Is JONY OS available on mobile?",
@@ -170,6 +156,7 @@ function LandingPage({ onLogin }) {
             <button className="hero-primary" onClick={onLogin}>
               Continue with Discord <ArrowUpRight size={17} />
             </button>
+
             <a className="hero-secondary" href="#features">
               Explore features <ChevronRight size={17} />
             </a>
@@ -188,31 +175,42 @@ function LandingPage({ onLogin }) {
 
           <div className="robot-card">
             <div className="robot-crown"><Crown /></div>
+
             <div className="robot-head">
               <div className="robot-antenna" />
+
               <div className="robot-face">
                 <span className="robot-eye" />
                 <span className="robot-eye" />
                 <span className="robot-mouth" />
               </div>
+
               <div className="robot-ear robot-ear-left" />
               <div className="robot-ear robot-ear-right" />
             </div>
+
             <div className="robot-body">
               <div className="robot-core"><Sparkles /></div>
             </div>
+
             <div className="robot-base" />
           </div>
 
           <div className="float-card float-card-top">
             <span className="float-icon"><ShieldCheck /></span>
-            <div><b>Protection active</b><small>Systems operational</small></div>
+            <div>
+              <b>Protection active</b>
+              <small>Systems operational</small>
+            </div>
             <span className="float-dot" />
           </div>
 
           <div className="float-card float-card-bottom">
             <span className="float-icon"><Activity /></span>
-            <div><b>Workspace status</b><small>All systems ready</small></div>
+            <div>
+              <b>Workspace status</b>
+              <small>All systems ready</small>
+            </div>
             <span className="float-dot" />
           </div>
 
@@ -227,7 +225,11 @@ function LandingPage({ onLogin }) {
       <section className="features-section landing-section" id="features">
         <div className="section-heading">
           <span className="section-kicker">BUILT FOR YOUR COMMUNITY</span>
-          <h2>Everything you need.<br /><span>All in one place.</span></h2>
+          <h2>
+            Everything you need.
+            <br />
+            <span>All in one place.</span>
+          </h2>
           <p>Powerful tools, organized into one simple workspace.</p>
         </div>
 
@@ -248,11 +250,18 @@ function LandingPage({ onLogin }) {
         <div className="systems-intro">
           <div className="section-heading section-heading-left">
             <span className="section-kicker">YOUR CONTROL CENTER</span>
-            <h2>Meet your new<br /><span>command center.</span></h2>
+
+            <h2>
+              Meet your new
+              <br />
+              <span>command center.</span>
+            </h2>
+
             <p>
               A clean workspace that brings your community tools together.
               Spend less time switching between tools and more time building.
             </p>
+
             <button className="hero-primary" onClick={onLogin}>
               Open your dashboard <ArrowUpRight size={17} />
             </button>
@@ -264,6 +273,7 @@ function LandingPage({ onLogin }) {
               <span>JONY OS / DASHBOARD</span>
               <span className="preview-online">● ONLINE</span>
             </div>
+
             <div className="preview-layout">
               <div className="preview-sidebar">
                 <div className="preview-logo"><Crown /></div>
@@ -274,24 +284,35 @@ function LandingPage({ onLogin }) {
                 <span><Ticket /></span>
                 <span><Settings /></span>
               </div>
+
               <div className="preview-main">
                 <div className="preview-welcome">
-                  <div><small>WORKSPACE / OVERVIEW</small><b>Welcome back!</b></div>
+                  <div>
+                    <small>WORKSPACE / OVERVIEW</small>
+                    <b>Welcome back!</b>
+                  </div>
                   <div className="preview-avatar">J</div>
                 </div>
+
                 <div className="preview-stats">
                   <div><small>Servers</small><b>12</b><i>+12.8%</i></div>
                   <div><small>Members</small><b>24.8K</b><i>+8.2%</i></div>
                   <div><small>Uptime</small><b>99.9%</b><i>Stable</i></div>
                 </div>
+
                 <div className="preview-chart">
-                  <div><b>Server activity</b><small>Last 7 days</small></div>
+                  <div>
+                    <b>Server activity</b>
+                    <small>Last 7 days</small>
+                  </div>
+
                   <div className="preview-bars">
                     {[35, 54, 44, 75, 59, 92, 77, 100, 72, 86, 64, 91].map((height, i) => (
                       <span key={i} style={{ height: `${height}%` }} />
                     ))}
                   </div>
                 </div>
+
                 <div className="preview-bottom">
                   <div><span className="preview-status-dot" /> Moderation <small>Operational</small></div>
                   <div><span className="preview-status-dot" /> Ticket System <small>Operational</small></div>
@@ -305,7 +326,10 @@ function LandingPage({ onLogin }) {
           {systemCards.map(([title, description, Icon]) => (
             <article className="showcase-card" key={title}>
               <span><Icon /></span>
-              <div><b>{title}</b><p>{description}</p></div>
+              <div>
+                <b>{title}</b>
+                <p>{description}</p>
+              </div>
               <ChevronRight />
             </article>
           ))}
@@ -323,25 +347,44 @@ function LandingPage({ onLogin }) {
           <article className="terms-card">
             <span>01</span>
             <h3>Account Access</h3>
-            <p>You are responsible for keeping access to your Discord account secure. Sign-in is handled through Discord authorization.</p>
+            <p>
+              You are responsible for keeping access to your Discord account
+              secure. Sign-in is handled through Discord authorization.
+            </p>
           </article>
+
           <article className="terms-card">
             <span>02</span>
             <h3>Acceptable Use</h3>
-            <p>Do not use the platform to violate Discord rules, disrupt communities, or interfere with the service.</p>
+            <p>
+              Do not use the platform to violate Discord rules, disrupt
+              communities, or interfere with the service.
+            </p>
           </article>
+
           <article className="terms-card">
             <span>03</span>
             <h3>Service Availability</h3>
-            <p>Features may change as the platform develops. Availability of individual systems may depend on setup and integrations.</p>
+            <p>
+              Features may change as the platform develops. Availability of
+              individual systems may depend on setup and integrations.
+            </p>
           </article>
+
           <article className="terms-card">
             <span>04</span>
             <h3>Data & Privacy</h3>
-            <p>Discord account information is used to provide sign-in and identify your account. Do not share your account credentials.</p>
+            <p>
+              Discord account information is used to provide sign-in and
+              identify your account. Do not share your account credentials.
+            </p>
           </article>
         </div>
-        <p className="terms-note">By using JONY OS, you agree to use the platform responsibly and in accordance with applicable Discord policies.</p>
+
+        <p className="terms-note">
+          By using JONY OS, you agree to use the platform responsibly and in
+          accordance with applicable Discord policies.
+        </p>
       </section>
 
       <section className="faq-section landing-section" id="faq">
@@ -365,8 +408,15 @@ function LandingPage({ onLogin }) {
         <div className="cta-glow" />
         <div className="cta-icon"><Crown /></div>
         <span className="section-kicker">READY WHEN YOU ARE</span>
-        <h2>Take control of<br /><span>your community.</span></h2>
+
+        <h2>
+          Take control of
+          <br />
+          <span>your community.</span>
+        </h2>
+
         <p>Your next chapter starts with one click.</p>
+
         <button className="hero-primary" onClick={onLogin}>
           Continue with Discord <ArrowUpRight size={17} />
         </button>
@@ -377,6 +427,7 @@ function LandingPage({ onLogin }) {
           <span className="landing-brand-icon"><Crown /></span>
           <span>JONY <em>OS</em></span>
         </a>
+
         <p>Built for better communities.</p>
         <span>© 2026 JONY OS. All rights reserved.</span>
       </footer>
@@ -384,308 +435,12 @@ function LandingPage({ onLogin }) {
   );
 }
 
-18.4%", MessageSquare],
-    ["Bot uptime", "99.9%", "30 days", Activity]export default function App() {
-  const [page, setPage] = useState("Dashboard");
-  const [menu, setMenu] = useState(false);
-  const [enabled, setEnabled] = useState(systems.map(x => x[3]));
-  const [query, setQuery] = useState("");
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    fetch("/api/auth/me")
-      .then(async response => {
-        if (!response.ok) return null;
-        return response.json();
-      })
-      .then(result => {
-        if (active && result?.authenticated && result.user) {
-          setUser(result.user);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) setAuthLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const login = () => {
-    window.location.href = "/api/auth/login";
-  };
-
-  if (authLoading) {
-    return (
-      <div className="auth-loading">
-        <div className="loading-crown"><Crown /></div>
-        <h2>JONY <em>OS</em></h2>
-        <p>Preparing your experience...</p>
-        <div className="loading-line"><span /></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LandingPage onLogin={login} />;
-  }
-
-  const avatar = getAvatar(user);
-  const displayName = user?.global_name || user?.username || "Guest";
-
-  const stats = [
-    ["Connected servers", "12", "+12.8%", Server],
-    ["Total members", "24.8K", "+8.2%", Users],
-    ["Messages handled", "1.2M", "+
-  ];
-
-  return (
-    <div className="app">
-      {menu && <div className="scrim" onClick={() => setMenu(false)} />}
-
-      <aside className={menu ? "sidebar show" : "sidebar"}>
-        <div className="brand">
-          <div className="brand-icon"><Crown /></div>
-          <div>
-            <b>JONY <em>OS</em></b>
-            <small>DISCORD BOT PLATFORM</small>
-          </div>
-          <button className="close" onClick={() => setMenu(false)}>
-            <X />
-          </button>
-        </div>
-
-        <div className="workspace">
-          <div className="server-logo">J</div>
-          <div>
-            <b>JONY Workspace</b>
-            <small>Free workspace</small>
-          </div>
-          <ChevronDown size={15} />
-        </div>
-
-        {groups.map(group => (
-          <section className="nav-group" key={group.title}>
-            <label>{group.title}</label>
-            {group.links.map(([name, Icon]) => (
-              <button
-                className={page === name ? "nav active" : "nav"}
-                key={name}
-                onClick={() => {
-                  setPage(name);
-                  setMenu(false);
-                }}
-              >
-                <Icon size={17} />
-                {name}
-              </button>
-            ))}
-          </section>
-        ))}
-
-        <div className="help">
-          <b>Need a hand?</b>
-          <p>Explore guides and get help setting up your bot.</p>
-          <span>Visit help center ↗</span>
-        </div>
-
-        <div className="user">
-          {avatar ? (
-            <img className="avatar" src={avatar} alt="Discord avatar" />
-          ) : (
-            <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
-          )}
-          <div>
-            <b>{displayName}</b>
-            <small>Discord Account</small>
-          </div>
-        </div>
-      </aside>
-
-      <main>
-        <header>
-          <button className="hamb" onClick={() => setMenu(true)}>
-            <Menu />
-          </button>
-          <div className="crumb">Workspace　›　<b>{page}</b></div>
-          <div className="right">
-            <span className="online">● All systems operational</span>
-            <button className="round"><Search /></button>
-            <button className="round"><Bell /></button>
-            {avatar ? (
-              <img className="avatar" src={avatar} alt="Discord avatar" />
-            ) : (
-              <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
-            )}
-          </div>
-        </header>
-
-        <div className="content">
-          <div className="heading">
-            <div>
-              <label>WORKSPACE / {page.toUpperCase()}</label>
-              <h1>{page === "Dashboard" ? `Welcome back, ${displayName} 👋` : page}</h1>
-              <p>
-                {page === "Dashboard"
-                  ? "Here's what's happening with your Discord bot today."
-                  : `Manage and configure your ${page.toLowerCase()} workspace.`}
-              </p>
-            </div>
-            <button className="primary" onClick={() => setPage("Systems")}>
-              <Sparkles size={16} /> Customize dashboard
-            </button>
-          </div>
-
-          {page === "Dashboard" && (
-            <>
-              <div className="stats">
-                {stats.map(([label, value, change, Icon]) => (
-                  <div className="stat" key={label}>
-                    <div className="stat-top">
-                      <span className="stat-icon"><Icon /></span>
-                      <small>↗ {change}</small>
-                    </div>
-                    <strong>{value}</strong>
-                    <p>{label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid">
-                <section className="panel chart">
-                  <div className="panel-head">
-                    <div><b>Server activity</b><p>Member growth over the last 7 days</p></div>
-                    <button className="select">Last 7 days⌄</button>
-                  </div>
-                  <div className="chart-area">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={data}>
-                        <defs>
-                          <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#9b78ff" stopOpacity=".35" />
-                            <stop offset="100%" stopColor="#9b78ff" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid stroke="#252740" vertical={false} />
-                        <XAxis dataKey="day" tick={{ fill: "#8589a5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: "#8589a5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ background: "#17182c", border: "1px solid #393451", borderRadius: 10 }} />
-                        <Area type="monotone" dataKey="members" stroke="#a78bfa" strokeWidth={3} fill="url(#fill)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </section>
-
-                <section className="panel">
-                  <div className="panel-head">
-                    <div><b>System status</b><p>Your active modules</p></div>
-                    <span className="live">● LIVE</span>
-                  </div>
-                  {["Moderation", "Ticket System", "Welcome", "Auto Moderation", "Audit Logs"].map(item => (
-                    <div className="status" key={item}>
-                      <span><Check size={13} /></span>{item}<small>Operational</small>
-                    </div>
-                  ))}
-                  <button className="link" onClick={() => setPage("Systems")}>View all systems ↗</button>
-                </section>
-              </div>
-
-              <div className="grid lower">
-                <section className="panel">
-                  <div className="panel-head">
-                    <div><b>Your servers</b><p>Recently connected Discord servers</p></div>
-                    <button className="link" onClick={() => setPage("Servers")}>View all ↗</button>
-                  </div>
-                  {[["GE", "Galaxy Empire", "8,420"], ["AW", "Anime World", "5,210"], ["GH", "Gaming Hub", "3,840"]].map(server => (
-                    <div className="server-row" key={server[1]}>
-                      <div className="server-logo">{server[0]}</div>
-                      <div><b>{server[1]}</b><small>{server[2]} members</small></div>
-                      <span>Connected</span>
-                    </div>
-                  ))}
-                </section>
-
-                <section className="panel">
-                  <div className="panel-head"><div><b>Recent activity</b><p>Latest workspace events</p></div></div>
-                  {["Moderation action logged", "New ticket created", "Member joined the server"].map((item, i) => (
-                    <div className="activity" key={item}>
-                      <span>{i === 0 ? <Shield /> : i === 1 ? <Ticket /> : <Users />}</span>
-                      <div>
-                        <b>{item}</b>
-                        <small>{["Galaxy Empire · 2 min ago", "Anime World · 18 min ago", "Gaming Hub · 42 min ago"][i]}</small>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              </div>
-
-              <div className="banner">
-                <Crown />
-                <div>
-                  <b>Make community management effortless.</b>
-                  <p>Explore JONY OS systems and build your perfect server experience.</p>
-                </div>
-                <button onClick={() => setPage("Systems")}>Explore systems ↗</button>
-              </div>
-            </>
-          )}
-
-          {page === "Systems" && (
-            <>
-              <div className="toolbar">
-                <div className="search">
-                  <Search size={16} />
-                  <input placeholder="Find a system..." value={query} onChange={e => setQuery(e.target.value)} />
-                </div>
-                <span className="live">{enabled.filter(Boolean).length} ACTIVE</span>
-              </div>
-              <div className="system-grid">
-                {systems.map(([name, desc, Icon], i) =>
-                  name.toLowerCase().includes(query.toLowerCase()) && (
-                    <section className="panel system" key={name}>
-                      <div className="system-top">
-                        <span className="system-icon"><Icon /></span>
-                        <input
-                          type="checkbox"
-                          checked={enabled[i]}
-                          onChange={() => setEnabled(old => old.map((value, index) => i === index ? !value : value))}
-                        />
-                      </div>
-                      <b>{name}</b>
-                      <p>{desc}</p>
-                      <div className="system-bottom">
-                        <small className={enabled[i] ? "green" : "muted"}>● {enabled[i] ? "Enabled" : "Disabled"}</small>
-                        <button className="link">Configure ›</button>
-                      </div>
-                    </section>
-                  )
-                )}
-              </div>
-            </>
-          )}
-
-          {page === "Servers" && (
-            <div className="panel placeholder">
-              <Server />
-              <h2>Your Discord account is connected</h2>
-              <p>Signed in as {displayName}. Your managed servers will appear here after we connect the server API.</p>
-              {avatar && <img src={avatar} alt="Discord avatar" style={{ width: 64, height: 64, borderRadius: "50%" }} />}
-              <p>{user.username}</p>
-            </div>
-          )}
-
-          {page === "Analytics" && (
-
 export default function App() {
   const [page, setPage] = useState("Servers");
   const [menu, setMenu] = useState(false);
   const [enabled, setEnabled] = useState(systems.map(x => x[3]));
   const [query, setQuery] = useState("");
+
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -746,7 +501,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (user) loadServers();
+    if (user) {
+      loadServers();
+    }
   }, [user]);
 
   const openServer = async server => {
@@ -758,7 +515,10 @@ export default function App() {
     setMenu(false);
 
     try {
-      const response = await fetch(`/api/server?id=${encodeURIComponent(server.id)}`);
+      const response = await fetch(
+        `/api/server?id=${encodeURIComponent(server.id)}`
+      );
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -776,6 +536,7 @@ export default function App() {
   const backToServers = () => {
     setSelectedServer(null);
     setServerDetails(null);
+    setDetailsError("");
     setPage("Servers");
   };
 
@@ -800,7 +561,10 @@ export default function App() {
   const navigationGroups = [
     {
       title: "OVERVIEW",
-      links: [["Servers", Server], ["Analytics", BarChart3]]
+      links: [
+        ["Servers", Server],
+        ["Analytics", BarChart3]
+      ]
     },
     {
       title: "MANAGEMENT",
@@ -815,7 +579,9 @@ export default function App() {
     },
     {
       title: "PREFERENCES",
-      links: [["Settings", Settings]]
+      links: [
+        ["Settings", Settings]
+      ]
     }
   ];
 
@@ -825,15 +591,22 @@ export default function App() {
 
   return (
     <div className="app">
-      {menu && <div className="scrim" onClick={() => setMenu(false)} />}
+      {menu && (
+        <div
+          className="scrim"
+          onClick={() => setMenu(false)}
+        />
+      )}
 
       <aside className={menu ? "sidebar show" : "sidebar"}>
         <div className="brand">
           <div className="brand-icon"><Crown /></div>
+
           <div>
             <b>JONY <em>OS</em></b>
             <small>DISCORD BOT PLATFORM</small>
           </div>
+
           <button className="close" onClick={() => setMenu(false)}>
             <X />
           </button>
@@ -841,20 +614,27 @@ export default function App() {
 
         <button className="workspace" onClick={backToServers}>
           <div className="server-logo">
-            {selectedServer?.icon
-              ? <img src={selectedServer.icon} alt="" />
-              : "J"}
+            {selectedServer?.icon ? (
+              <img src={selectedServer.icon} alt="" />
+            ) : (
+              "J"
+            )}
           </div>
+
           <div>
             <b>{selectedServer?.name || "JONY Workspace"}</b>
-            <small>{selectedServer ? "Selected server" : "Server workspace"}</small>
+            <small>
+              {selectedServer ? "Selected server" : "Server workspace"}
+            </small>
           </div>
+
           <ChevronDown size={15} />
         </button>
 
         {navigationGroups.map(group => (
           <section className="nav-group" key={group.title}>
             <label>{group.title}</label>
+
             {group.links.map(([name, Icon]) => (
               <button
                 className={page === name ? "nav active" : "nav"}
@@ -874,6 +654,7 @@ export default function App() {
         {selectedServer && (
           <section className="nav-group">
             <label>SELECTED SERVER</label>
+
             <button
               className={page === "Server Dashboard" ? "nav active" : "nav"}
               onClick={() => {
@@ -884,6 +665,7 @@ export default function App() {
               <LayoutDashboard size={17} />
               Server Overview
             </button>
+
             <button className="nav" onClick={backToServers}>
               <Server size={17} />
               Change Server
@@ -901,8 +683,11 @@ export default function App() {
           {avatar ? (
             <img className="avatar" src={avatar} alt="Discord avatar" />
           ) : (
-            <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
+            <div className="avatar">
+              {displayName[0]?.toUpperCase() || "J"}
+            </div>
           )}
+
           <div>
             <b>{displayName}</b>
             <small>Discord Account</small>
@@ -915,18 +700,28 @@ export default function App() {
           <button className="hamb" onClick={() => setMenu(true)}>
             <Menu />
           </button>
+
           <div className="crumb">
             Workspace　›　<b>{pageTitle}</b>
           </div>
+
           <div className="right">
             <span className="online">● Connected to Discord</span>
-            <button className="round" onClick={loadServers} title="Refresh servers">
+
+            <button
+              className="round"
+              onClick={loadServers}
+              title="Refresh servers"
+            >
               <Activity />
             </button>
+
             {avatar ? (
               <img className="avatar" src={avatar} alt="Discord avatar" />
             ) : (
-              <div className="avatar">{displayName[0]?.toUpperCase() || "J"}</div>
+              <div className="avatar">
+                {displayName[0]?.toUpperCase() || "J"}
+              </div>
             )}
           </div>
         </header>
@@ -935,6 +730,7 @@ export default function App() {
           <div className="heading">
             <div>
               <label>JONY OS / {pageTitle.toUpperCase()}</label>
+
               <h1>
                 {page === "Servers"
                   ? "Your Discord servers"
@@ -942,6 +738,7 @@ export default function App() {
                     ? pageTitle
                     : page}
               </h1>
+
               <p>
                 {page === "Servers"
                   ? "Choose a server to open its management dashboard."
@@ -953,7 +750,8 @@ export default function App() {
 
             {page === "Server Dashboard" && (
               <button className="primary" onClick={backToServers}>
-                <Server size={16} /> Change server
+                <Server size={16} />
+                Change server
               </button>
             )}
           </div>
@@ -965,9 +763,18 @@ export default function App() {
                   <span className="live">
                     ● {servers.length} MANAGEABLE SERVERS
                   </span>
-                  <p>Only servers where you have Administrator permission or ownership are shown.</p>
+
+                  <p>
+                    Only servers where you have Administrator permission
+                    or ownership are shown.
+                  </p>
                 </div>
-                <button className="primary" onClick={loadServers} disabled={serversLoading}>
+
+                <button
+                  className="primary"
+                  onClick={loadServers}
+                  disabled={serversLoading}
+                >
                   <Activity size={16} />
                   {serversLoading ? "Loading..." : "Refresh"}
                 </button>
@@ -977,7 +784,9 @@ export default function App() {
                 <div className="panel placeholder">
                   <Activity className="spin" />
                   <h2>Loading your servers...</h2>
-                  <p>Connecting to Discord and checking your server access.</p>
+                  <p>
+                    Connecting to Discord and checking your server access.
+                  </p>
                 </div>
               )}
 
@@ -986,6 +795,7 @@ export default function App() {
                   <Shield />
                   <h2>Couldn't load your servers</h2>
                   <p>{serversError}</p>
+
                   <button className="primary" onClick={loadServers}>
                     Try again
                   </button>
@@ -996,10 +806,12 @@ export default function App() {
                 <div className="panel placeholder">
                   <Server />
                   <h2>No manageable servers found</h2>
+
                   <p>
                     Make sure you're the server owner or have Administrator
                     permission in at least one Discord server.
                   </p>
+
                   <button className="primary" onClick={loadServers}>
                     Refresh servers
                   </button>
@@ -1012,28 +824,55 @@ export default function App() {
                     <article className="real-server-card" key={server.id}>
                       <div className="real-server-top">
                         {server.icon ? (
-                          <img src={server.icon} alt="" className="real-server-icon" />
+                          <img
+                            src={server.icon}
+                            alt=""
+                            className="real-server-icon"
+                          />
                         ) : (
                           <div className="real-server-icon fallback">
                             {server.name?.slice(0, 1).toUpperCase() || "S"}
                           </div>
                         )}
-                        <span className={server.isBotAdded ? "bot-badge added" : "bot-badge missing"}>
+
+                        <span
+                          className={
+                            server.isBotAdded
+                              ? "bot-badge added"
+                              : "bot-badge missing"
+                          }
+                        >
                           <span />
-                          {server.isBotAdded ? "BOT CONNECTED" : "BOT NOT ADDED"}
+                          {server.isBotAdded
+                            ? "BOT CONNECTED"
+                            : "BOT NOT ADDED"}
                         </span>
                       </div>
 
                       <h3>{server.name}</h3>
-                      <p className="real-server-id">ID: {server.id}</p>
+
+                      <p className="real-server-id">
+                        ID: {server.id}
+                      </p>
 
                       <div className="real-server-meta">
-                        <span><Users size={15} /> {server.memberCount != null ? server.memberCount.toLocaleString() : "—"} members</span>
-                        <span>{server.isOwner ? "Owner" : "Administrator"}</span>
+                        <span>
+                          <Users size={15} />
+                          {server.memberCount != null
+                            ? server.memberCount.toLocaleString()
+                            : "—"} members
+                        </span>
+
+                        <span>
+                          {server.isOwner ? "Owner" : "Administrator"}
+                        </span>
                       </div>
 
                       {server.isBotAdded ? (
-                        <button className="server-manage" onClick={() => openServer(server)}>
+                        <button
+                          className="server-manage"
+                          onClick={() => openServer(server)}
+                        >
                           Manage Server <ArrowUpRight size={16} />
                         </button>
                       ) : (
@@ -1057,10 +896,16 @@ export default function App() {
             <>
               <div className="server-detail-actions">
                 <button className="link" onClick={backToServers}>
-                  <ChevronRight size={15} /> Back to servers
+                  <ChevronRight size={15} />
+                  Back to servers
                 </button>
+
                 {selectedServer?.icon && (
-                  <img src={selectedServer.icon} alt="" className="detail-server-icon" />
+                  <img
+                    src={selectedServer.icon}
+                    alt=""
+                    className="detail-server-icon"
+                  />
                 )}
               </div>
 
@@ -1077,7 +922,12 @@ export default function App() {
                   <Shield />
                   <h2>Unable to open this server</h2>
                   <p>{detailsError}</p>
-                  <button className="primary" onClick={() => openServer(selectedServer)}>
+
+                  <button
+                    className="primary"
+                    onClick={() => openServer(selectedServer)}
+                    disabled={!selectedServer}
+                  >
                     Try again
                   </button>
                 </div>
@@ -1091,8 +941,13 @@ export default function App() {
                       <h2>{serverDetails.name}</h2>
                       <p>Your server workspace is ready.</p>
                     </div>
+
                     {serverDetails.icon ? (
-                      <img src={serverDetails.icon} alt="" className="detail-server-icon large" />
+                      <img
+                        src={serverDetails.icon}
+                        alt=""
+                        className="detail-server-icon large"
+                      />
                     ) : (
                       <div className="detail-server-icon large fallback">
                         {serverDetails.name?.slice(0, 1).toUpperCase()}
@@ -1102,15 +957,32 @@ export default function App() {
 
                   <div className="stats">
                     {[
-                      ["Total members", serverDetails.memberCount?.toLocaleString() ?? "—", Users],
-                      ["Online members", serverDetails.onlineCount?.toLocaleString() ?? "—", Activity],
-                      ["Channels", serverDetails.channelCount ?? 0, MessageSquare],
-                      ["Roles", serverDetails.roleCount ?? 0, Shield]
+                      [
+                        "Total members",
+                        serverDetails.memberCount?.toLocaleString() ?? "—",
+                        Users
+                      ],
+                      [
+                        "Online members",
+                        serverDetails.onlineCount?.toLocaleString() ?? "—",
+                        Activity
+                      ],
+                      [
+                        "Channels",
+                        serverDetails.channelCount ?? 0,
+                        MessageSquare
+                      ],
+                      [
+                        "Roles",
+                        serverDetails.roleCount ?? 0,
+                        Shield
+                      ]
                     ].map(([label, value, Icon]) => (
                       <div className="stat" key={label}>
                         <div className="stat-top">
                           <span className="stat-icon"><Icon /></span>
                         </div>
+
                         <strong>{value}</strong>
                         <p>{label}</p>
                       </div>
@@ -1124,17 +996,28 @@ export default function App() {
                           <b>Server channels</b>
                           <p>Channels returned by Discord</p>
                         </div>
-                        <span className="live">{serverDetails.channels?.length || 0}</span>
+
+                        <span className="live">
+                          {serverDetails.channels?.length || 0}
+                        </span>
                       </div>
+
                       <div className="server-data-list">
-                        {(serverDetails.channels || []).slice(0, 12).map(channel => (
-                          <div className="server-data-row" key={channel.id}>
-                            <MessageSquare size={16} />
-                            <span>{channel.name}</span>
-                            <small>{channel.type === 4 ? "Category" : "Channel"}</small>
-                          </div>
-                        ))}
-                        {!serverDetails.channels?.length && <p>No channels available.</p>}
+                        {(serverDetails.channels || [])
+                          .slice(0, 12)
+                          .map(channel => (
+                            <div className="server-data-row" key={channel.id}>
+                              <MessageSquare size={16} />
+                              <span>{channel.name}</span>
+                              <small>
+                                {channel.type === 4 ? "Category" : "Channel"}
+                              </small>
+                            </div>
+                          ))}
+
+                        {!serverDetails.channels?.length && (
+                          <p>No channels available.</p>
+                        )}
                       </div>
                     </section>
 
@@ -1144,17 +1027,26 @@ export default function App() {
                           <b>Server roles</b>
                           <p>Roles returned by Discord</p>
                         </div>
-                        <span className="live">{serverDetails.roles?.length || 0}</span>
+
+                        <span className="live">
+                          {serverDetails.roles?.length || 0}
+                        </span>
                       </div>
+
                       <div className="server-data-list">
-                        {(serverDetails.roles || []).slice(0, 12).map(role => (
-                          <div className="server-data-row" key={role.id}>
-                            <Shield size={16} />
-                            <span>{role.name}</span>
-                            <small>{role.position}</small>
-                          </div>
-                        ))}
-                        {!serverDetails.roles?.length && <p>No roles available.</p>}
+                        {(serverDetails.roles || [])
+                          .slice(0, 12)
+                          .map(role => (
+                            <div className="server-data-row" key={role.id}>
+                              <Shield size={16} />
+                              <span>{role.name}</span>
+                              <small>{role.position}</small>
+                            </div>
+                          ))}
+
+                        {!serverDetails.roles?.length && (
+                          <p>No roles available.</p>
+                        )}
                       </div>
                     </section>
                   </div>
@@ -1168,13 +1060,17 @@ export default function App() {
               <div className="toolbar">
                 <div className="search">
                   <Search size={16} />
+
                   <input
                     placeholder="Find a system..."
                     value={query}
                     onChange={e => setQuery(e.target.value)}
                   />
                 </div>
-                <span className="live">{enabled.filter(Boolean).length} ACTIVE</span>
+
+                <span className="live">
+                  {enabled.filter(Boolean).length} ACTIVE
+                </span>
               </div>
 
               <div className="system-grid">
@@ -1183,20 +1079,26 @@ export default function App() {
                     <section className="panel system" key={name}>
                       <div className="system-top">
                         <span className="system-icon"><Icon /></span>
+
                         <input
                           type="checkbox"
                           checked={enabled[i]}
                           onChange={() => setEnabled(old =>
-                            old.map((value, index) => i === index ? !value : value)
+                            old.map((value, index) =>
+                              i === index ? !value : value
+                            )
                           )}
                         />
                       </div>
+
                       <b>{name}</b>
                       <p>{desc}</p>
+
                       <div className="system-bottom">
                         <small className={enabled[i] ? "green" : "muted"}>
                           ● {enabled[i] ? "Enabled" : "Disabled"}
                         </small>
+
                         <button className="link">Configure ›</button>
                       </div>
                     </section>
@@ -1210,15 +1112,25 @@ export default function App() {
             <div className="panel placeholder">
               <BarChart3 />
               <h2>Analytics overview</h2>
-              <p>Live analytics will be connected in a later stage.</p>
+              <p>
+                Live analytics will be connected in a later stage.
+              </p>
             </div>
           )}
 
-          {!["Servers", "Server Dashboard", "Systems", "Analytics"].includes(page) && (
+          {![
+            "Servers",
+            "Server Dashboard",
+            "Systems",
+            "Analytics"
+          ].includes(page) && (
             <div className="panel placeholder">
               <Settings />
               <h2>{page} settings</h2>
-              <p>This section will be connected to the selected server in a later stage.</p>
+              <p>
+                This section will be connected to the selected server
+                in a later stage.
+              </p>
             </div>
           )}
 
@@ -1231,4 +1143,4 @@ export default function App() {
       </main>
     </div>
   );
-}
+          }
