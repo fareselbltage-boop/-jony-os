@@ -1063,6 +1063,8 @@ export default function App() {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState("");
   const [settingsMessage, setSettingsMessage] = useState("");
+  const [welcomeTestLoading, setWelcomeTestLoading] = useState(false);
+  const [welcomeTestMessage, setWelcomeTestMessage] = useState("");
 
   const rolesPerPage = 8;
   const channelsPerPage = 8;
@@ -1304,6 +1306,54 @@ export default function App() {
     if (!selectedServer) return;
 
     await saveGuildSettings(nextSettings);
+  };
+
+  const testWelcome = async () => {
+    if (!selectedServer) return;
+
+    setWelcomeTestLoading(true);
+    setWelcomeTestMessage("");
+    setSettingsError("");
+
+    try {
+      const saved = await saveGuildSettings(guildSettings);
+      if (!saved) throw new Error("Save your welcome settings before testing.");
+
+      const createResponse = await fetch(
+        `/api/welcome-test?id=${encodeURIComponent(selectedServer.id)}`,
+        { method: "POST" }
+      );
+      const created = await createResponse.json();
+      if (!createResponse.ok) throw new Error(created.error || "Could not start test.");
+
+      const deadline = Date.now() + 60000;
+
+      while (Date.now() < deadline) {
+        await new Promise(resolve => window.setTimeout(resolve, 2000));
+
+        const statusResponse = await fetch(
+          `/api/welcome-test?id=${encodeURIComponent(selectedServer.id)}&requestId=${encodeURIComponent(created.requestId)}`
+        );
+        const status = await statusResponse.json();
+
+        if (!statusResponse.ok) throw new Error(status.error || "Could not check test status.");
+
+        if (status.status === "completed") {
+          setWelcomeTestMessage("Test welcome message sent successfully.");
+          return;
+        }
+
+        if (status.status === "failed" || status.status === "expired") {
+          throw new Error(status.result || "The bot could not send the test message.");
+        }
+      }
+
+      throw new Error("Test timed out. Make sure the bot is online and restart it with the updated files.");
+    } catch (error) {
+      setWelcomeTestMessage(error.message || "Welcome test failed.");
+    } finally {
+      setWelcomeTestLoading(false);
+    }
   };
 
   const updateWelcomeSetting = (key, value) => {
@@ -2605,14 +2655,28 @@ export default function App() {
                   {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
                   {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
 
-                  <button
-                    className="primary"
-                    style={{ marginTop: "18px" }}
-                    onClick={() => saveGuildSettings(guildSettings)}
-                    disabled={settingsSaving}
-                  >
-                    {settingsSaving ? "Saving..." : "Save Welcome Settings"}
-                  </button>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "18px" }}>
+                    <button
+                      className="primary"
+                      onClick={() => saveGuildSettings(guildSettings)}
+                      disabled={settingsSaving || welcomeTestLoading}
+                    >
+                      {settingsSaving ? "Saving..." : "Save Welcome Settings"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={testWelcome}
+                      disabled={settingsSaving || welcomeTestLoading || !guildSettings.welcome?.channelId}
+                      style={{ padding: "11px 18px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.4)", background: "rgba(145,90,255,0.14)", color: "#d8c5ff", cursor: "pointer", fontWeight: 700 }}
+                    >
+                      {welcomeTestLoading ? "Sending test..." : "Test Welcome"}
+                    </button>
+                  </div>
+                  {welcomeTestMessage && (
+                    <p style={{ color: welcomeTestMessage.includes("successfully") ? "#73e6a2" : "#ff8585", marginTop: "12px" }}>
+                      {welcomeTestMessage}
+                    </p>
+                  )}
                 </>
               )}
             </div>
