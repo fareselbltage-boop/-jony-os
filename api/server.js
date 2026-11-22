@@ -62,9 +62,7 @@ async function refreshDiscordToken(refreshToken) {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret || !refreshToken) {
-    return null;
-  }
+  if (!clientId || !clientSecret || !refreshToken) return null;
 
   try {
     const params = new URLSearchParams({
@@ -147,6 +145,28 @@ function sendDiscordError(res, result, fallback) {
     discordStatus: result.status,
     discordError: result.data?.message || "Unknown Discord error"
   });
+}
+
+function normalizeChannel(channel) {
+  return {
+    id: String(channel.id),
+    name: String(channel.name || "unknown-channel"),
+    type: Number(channel.type),
+    parent_id: channel.parent_id || null,
+    position: Number(channel.position || 0),
+    topic: channel.topic || null
+  };
+}
+
+function normalizeRole(role) {
+  return {
+    id: String(role.id),
+    name: String(role.name || "Unknown Role"),
+    position: Number(role.position || 0),
+    color: Number(role.color || 0),
+    managed: Boolean(role.managed),
+    hoist: Boolean(role.hoist)
+  };
 }
 
 export default async function handler(req, res) {
@@ -264,14 +284,6 @@ export default async function handler(req, res) {
     );
 
     if (!guildResult.ok || !guildResult.data) {
-      if (guildResult.status === 429) {
-        return sendDiscordError(
-          res,
-          guildResult,
-          "Discord rate limit reached"
-        );
-      }
-
       if (guildResult.status === 404) {
         return res.status(404).json({
           error: "Bot is not in this server or server data is unavailable",
@@ -317,21 +329,33 @@ export default async function handler(req, res) {
 
     const channels = Array.isArray(channelsResult.data)
       ? channelsResult.data
+          .filter(channel => channel && channel.id)
+          .map(normalizeChannel)
+          .sort((a, b) => {
+            if (a.type === 4 && b.type !== 4) return -1;
+            if (a.type !== 4 && b.type === 4) return 1;
+            return a.position - b.position;
+          })
       : [];
 
     const roles = Array.isArray(rolesResult.data)
       ? rolesResult.data
+          .filter(role => role && role.id)
+          .map(normalizeRole)
+          .sort((a, b) => b.position - a.position)
       : [];
+
+    console.log(
+      `[JONY OS] Loaded ${channels.length} channels and ${roles.length} roles for ${guild.name}`
+    );
 
     return res.status(200).json({
       server: {
         id: guild.id,
         name: guild.name,
-
         icon: guild.icon
           ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${guild.icon.startsWith("a_") ? "gif" : "png"}?size=256`
           : null,
-
         botAdded: true,
         memberCount: guild.approximate_member_count ?? null,
         onlineCount: guild.approximate_presence_count ?? null,
