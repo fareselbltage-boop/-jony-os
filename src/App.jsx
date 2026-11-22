@@ -2380,7 +2380,8 @@ export default function App() {
                           <option value="">Select a category</option>
                           {guildSettings.tickets?.categoryId &&
                             !(serverDetails?.channels || []).some(channel =>
-                              String(channel.id) === String(guildSettings.tickets.categoryId)
+                              String(channel.id) === String(guildSettings.tickets.categoryId) &&
+                              Number(channel.type) === 4
                             ) && (
                               <option value={String(guildSettings.tickets.categoryId)}>
                                 Saved category ({guildSettings.tickets.categoryId})
@@ -2402,7 +2403,8 @@ export default function App() {
                           <option value="">Use command channel</option>
                           {guildSettings.tickets?.panelChannelId &&
                             !(serverDetails?.channels || []).some(channel =>
-                              String(channel.id) === String(guildSettings.tickets.panelChannelId)
+                              String(channel.id) === String(guildSettings.tickets.panelChannelId) &&
+                              [0, 5].includes(Number(channel.type))
                             ) && (
                               <option value={String(guildSettings.tickets.panelChannelId)}>
                                 Saved channel ({guildSettings.tickets.panelChannelId})
@@ -2438,7 +2440,8 @@ export default function App() {
                           <option value="">No log channel</option>
                           {guildSettings.tickets?.logChannelId &&
                             !(serverDetails?.channels || []).some(channel =>
-                              String(channel.id) === String(guildSettings.tickets.logChannelId)
+                              String(channel.id) === String(guildSettings.tickets.logChannelId) &&
+                              [0, 5].includes(Number(channel.type))
                             ) && (
                               <option value={String(guildSettings.tickets.logChannelId)}>
                                 Saved channel ({guildSettings.tickets.logChannelId})
