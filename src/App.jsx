@@ -30,7 +30,10 @@ import {
   Volume2,
   Folder,
   Percent,
-  Plus
+  Plus,
+  Image as ImageIcon,
+  Upload,
+  Trash2
 } from "lucide-react";
 
 const systems = [
@@ -1065,6 +1068,10 @@ export default function App() {
   const [settingsMessage, setSettingsMessage] = useState("");
   const [welcomeTestLoading, setWelcomeTestLoading] = useState(false);
   const [welcomeTestMessage, setWelcomeTestMessage] = useState("");
+  const [welcomeTemplate, setWelcomeTemplate] = useState(null);
+  const [welcomeTemplateLoading, setWelcomeTemplateLoading] = useState(false);
+  const [welcomeTemplateSaving, setWelcomeTemplateSaving] = useState(false);
+  const [welcomeTemplateError, setWelcomeTemplateError] = useState("");
 
   const rolesPerPage = 8;
   const channelsPerPage = 8;
@@ -1307,6 +1314,90 @@ export default function App() {
 
     await saveGuildSettings(nextSettings);
   };
+
+  const loadWelcomeTemplate = async serverId => {
+    if (!serverId) return;
+    setWelcomeTemplateLoading(true);
+    setWelcomeTemplateError("");
+
+    try {
+      const response = await fetch(`/api/welcome-template?id=${encodeURIComponent(serverId)}`);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not load welcome image.");
+      setWelcomeTemplate(result.template || null);
+    } catch (error) {
+      setWelcomeTemplateError(error.message || "Could not load welcome image.");
+    } finally {
+      setWelcomeTemplateLoading(false);
+    }
+  };
+
+  const uploadWelcomeTemplate = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !selectedServer) return;
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setWelcomeTemplateError("Use a PNG, JPG, or WebP image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setWelcomeTemplateError("The image must be 2 MB or smaller.");
+      return;
+    }
+
+    setWelcomeTemplateSaving(true);
+    setWelcomeTemplateError("");
+
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Could not read the image."));
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(`/api/welcome-template?id=${encodeURIComponent(selectedServer.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl, fileName: file.name })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not upload image.");
+
+      setWelcomeTemplate(result.template);
+    } catch (error) {
+      setWelcomeTemplateError(error.message || "Could not upload image.");
+    } finally {
+      setWelcomeTemplateSaving(false);
+    }
+  };
+
+  const removeWelcomeTemplate = async () => {
+    if (!selectedServer) return;
+    setWelcomeTemplateSaving(true);
+    setWelcomeTemplateError("");
+
+    try {
+      const response = await fetch(`/api/welcome-template?id=${encodeURIComponent(selectedServer.id)}`, {
+        method: "DELETE"
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not remove image.");
+      setWelcomeTemplate(null);
+    } catch (error) {
+      setWelcomeTemplateError(error.message || "Could not remove image.");
+    } finally {
+      setWelcomeTemplateSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (page === "Welcome" && selectedServer?.id) {
+      loadWelcomeTemplate(selectedServer.id);
+    }
+  }, [page, selectedServer?.id]);
 
   const testWelcome = async () => {
     if (!selectedServer) return;
@@ -2555,6 +2646,54 @@ export default function App() {
                       <small style={{ display: "block", marginTop: "7px", color: "#8f899b" }}>
                         The bot must have permission to view and send messages in this channel.
                       </small>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Welcome Image Template</b>
+                        <p>Upload a design with a clear white area where the member avatar should appear.</p>
+                      </div>
+                      <ImageIcon />
+                    </div>
+
+                    <div style={{ marginTop: "18px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                      {welcomeTemplate?.dataUrl ? (
+                        <img
+                          src={welcomeTemplate.dataUrl}
+                          alt="Welcome template preview"
+                          style={{ display: "block", width: "100%", maxWidth: "620px", maxHeight: "360px", objectFit: "contain", borderRadius: "10px", border: "1px solid rgba(145,90,255,0.25)", background: "rgba(0,0,0,0.2)" }}
+                        />
+                      ) : (
+                        <div style={{ width: "100%", maxWidth: "620px", minHeight: "150px", display: "grid", placeItems: "center", border: "1px dashed rgba(145,90,255,0.4)", borderRadius: "10px", color: "#aaa4b8", background: "rgba(145,90,255,0.05)" }}>
+                          <div style={{ textAlign: "center" }}>
+                            <ImageIcon size={28} />
+                            <p style={{ marginTop: "8px" }}>No welcome image uploaded</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <small style={{ color: "#aaa4b8", lineHeight: 1.6 }}>
+                        PNG, JPG or WebP · Maximum 2 MB. Use one clearly white, connected placeholder area. The bot will detect its shape and fit the member avatar inside it.
+                      </small>
+
+                      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                        <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 16px", borderRadius: "9px", background: "rgba(145,90,255,0.16)", border: "1px solid rgba(145,90,255,0.4)", color: "#d8c5ff", cursor: welcomeTemplateSaving ? "not-allowed" : "pointer", fontWeight: 700, opacity: welcomeTemplateSaving ? 0.6 : 1 }}>
+                          <Upload size={16} />
+                          {welcomeTemplateSaving ? "Uploading..." : "Upload Image"}
+                          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadWelcomeTemplate} disabled={welcomeTemplateSaving} style={{ display: "none" }} />
+                        </label>
+
+                        {welcomeTemplate && (
+                          <button type="button" onClick={removeWelcomeTemplate} disabled={welcomeTemplateSaving} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 16px", borderRadius: "9px", background: "rgba(255,90,90,0.08)", border: "1px solid rgba(255,100,100,0.3)", color: "#ff9b9b", cursor: "pointer" }}>
+                            <Trash2 size={16} /> Remove Image
+                          </button>
+                        )}
+                      </div>
+
+                      {welcomeTemplateLoading && <small style={{ color: "#aaa4b8" }}>Loading saved image...</small>}
+                      {welcomeTemplateError && <p style={{ color: "#ff8585", margin: 0 }}>{welcomeTemplateError}</p>}
                     </div>
                   </section>
 
