@@ -1142,7 +1142,13 @@ export default function App() {
 
   const fetchServerDetails = async serverId => {
     const response = await fetch(
-      `/api/server?id=${encodeURIComponent(serverId)}`
+      `/api/server?id=${encodeURIComponent(serverId)}`,
+      {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      }
     );
 
     const result = await response.json();
@@ -1151,7 +1157,39 @@ export default function App() {
       throw new Error(result.error || "Could not load server details");
     }
 
-    return result.server;
+    // Support the API's nested response and common root-level response shapes.
+    const server = result.server || result.data?.server || result.data || {};
+    const channels = Array.isArray(server.channels)
+      ? server.channels
+      : Array.isArray(result.channels)
+        ? result.channels
+        : [];
+    const roles = Array.isArray(server.roles)
+      ? server.roles
+      : Array.isArray(result.roles)
+        ? result.roles
+        : [];
+
+    return {
+      ...server,
+      channels: channels
+        .filter(channel => channel && channel.id)
+        .map(channel => ({
+          ...channel,
+          id: String(channel.id),
+          type: Number(channel.type),
+          name: String(channel.name || "unknown-channel"),
+          parent_id: channel.parent_id ? String(channel.parent_id) : null
+        })),
+      roles: roles
+        .filter(role => role && role.id)
+        .map(role => ({
+          ...role,
+          id: String(role.id),
+          name: String(role.name || "unknown-role"),
+          position: Number(role.position || 0)
+        }))
+    };
   };
 
   const loadGuildSettings = async serverId => {
@@ -2176,7 +2214,7 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">Select a category</option>
-                          {(serverDetails?.channels || []).filter(channel => channel.type === 4).map(channel => (
+                          {(serverDetails?.channels || []).filter(channel => Number(channel.type) === 4).map(channel => (
                             <option key={channel.id} value={channel.id}>{channel.name}</option>
                           ))}
                         </select>
@@ -2190,7 +2228,7 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">Use command channel</option>
-                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(Number(channel.type))).map(channel => (
                             <option key={channel.id} value={channel.id}>#{channel.name}</option>
                           ))}
                         </select>
@@ -2204,7 +2242,7 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">Use Manage Server permission</option>
-                          {(serverDetails?.roles || []).filter(role => role.id !== selectedServer?.id).map(role => (
+                          {(serverDetails?.roles || []).filter(role => String(role.id) !== String(selectedServer?.id)).map(role => (
                             <option key={role.id} value={role.id}>@{role.name}</option>
                           ))}
                         </select>
@@ -2218,7 +2256,7 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">No log channel</option>
-                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(Number(channel.type))).map(channel => (
                             <option key={channel.id} value={channel.id}>#{channel.name}</option>
                           ))}
                         </select>
