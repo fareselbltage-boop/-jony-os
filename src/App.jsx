@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -635,11 +636,9 @@ function AnalyticsView({
   const channels = serverDetails.channels || [];
 
   const categories = channels.filter(channel => channel.type === 4);
-
   const textChannels = channels.filter(channel =>
     [0, 5, 10, 11, 12, 15].includes(channel.type)
   );
-
   const voiceChannels = channels.filter(channel =>
     [2, 13].includes(channel.type)
   );
@@ -711,11 +710,9 @@ function AnalyticsView({
       >
         <div>
           <span className="live">● LIVE DATA</span>
-
           <h2 style={{ marginTop: "8px" }}>
             {serverDetails.name}
           </h2>
-
           <p>
             Real-time information retrieved from Discord.
           </p>
@@ -730,7 +727,6 @@ function AnalyticsView({
             size={16}
             className={loading ? "spin" : ""}
           />
-
           {loading ? "Refreshing..." : "Refresh"}
         </button>
       </div>
@@ -1218,15 +1214,30 @@ export default function App() {
     }
   };
 
-  const updateSystem = (key, value) => {
+  const updateSystem = async (key, value) => {
+    const nextSettings = {
+      ...guildSettings,
+      systems: {
+        ...guildSettings.systems,
+        [key]: value
+      }
+    };
+
+    setGuildSettings(nextSettings);
+
+    if (!selectedServer) return;
+
+    await saveGuildSettings(nextSettings);
+  };
+
+  const updateTicketSetting = (key, value) => {
     setGuildSettings(old => ({
       ...old,
-      systems: {
-        ...old.systems,
+      tickets: {
+        ...(old.tickets || {}),
         [key]: value
       }
     }));
-
     setSettingsError("");
     setSettingsMessage("");
   };
@@ -1839,7 +1850,6 @@ export default function App() {
                   <Settings />
                   <h2>Select a server first</h2>
                   <p>Choose a server before changing its systems.</p>
-
                   <button className="primary" onClick={backToServers}>
                     <Server size={16} />
                     Choose Server
@@ -1893,10 +1903,7 @@ export default function App() {
                               checked={Boolean(guildSettings.systems[systemKeys[i]])}
                               disabled={settingsSaving}
                               onChange={e =>
-                                updateSystem(
-                                  systemKeys[i],
-                                  e.target.checked
-                                )
+                                updateSystem(systemKeys[i], e.target.checked)
                               }
                             />
                           </div>
@@ -1905,17 +1912,8 @@ export default function App() {
                           <p>{desc}</p>
 
                           <div className="system-bottom">
-                            <small
-                              className={
-                                guildSettings.systems[systemKeys[i]]
-                                  ? "green"
-                                  : "muted"
-                              }
-                            >
-                              ●{" "}
-                              {guildSettings.systems[systemKeys[i]]
-                                ? "Enabled"
-                                : "Disabled"}
+                            <small className={guildSettings.systems[systemKeys[i]] ? "green" : "muted"}>
+                              ● {guildSettings.systems[systemKeys[i]] ? "Enabled" : "Disabled"}
                             </small>
 
                             <button
@@ -1929,15 +1927,6 @@ export default function App() {
                       )
                     )}
                   </div>
-
-                  <button
-                    className="primary"
-                    style={{ marginTop: "18px" }}
-                    onClick={() => saveGuildSettings(guildSettings)}
-                    disabled={settingsSaving}
-                  >
-                    {settingsSaving ? "Saving..." : "Save Settings"}
-                  </button>
                 </>
               )}
             </>
@@ -1950,7 +1939,6 @@ export default function App() {
                   <Settings />
                   <h2>Select a server first</h2>
                   <p>Choose a server to manage its settings.</p>
-
                   <button className="primary" onClick={backToServers}>
                     <Server size={16} />
                     Choose Server
@@ -1970,17 +1958,11 @@ export default function App() {
                         <b>General Settings</b>
                         <p>Configure the basic settings for this server.</p>
                       </div>
-
                       <Settings />
                     </div>
 
                     <div style={{ marginTop: "22px" }}>
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: "9px"
-                        }}
-                      >
+                      <label style={{ display: "block", marginBottom: "9px" }}>
                         Command Prefix
                       </label>
 
@@ -2006,105 +1988,64 @@ export default function App() {
                         }}
                       />
 
-                      <p
-                        style={{
-                          marginTop: "8px",
-                          color: "#8f899b",
-                          fontSize: "12px"
-                        }}
-                      >
+                      <p style={{ marginTop: "8px", color: "#8f899b", fontSize: "12px" }}>
                         Current prefix: {guildSettings.prefix || "Not set"}
                       </p>
                     </div>
                   </section>
 
-                  <section
-                    className="panel"
-                    style={{ marginTop: "18px" }}
-                  >
+                  <section className="panel" style={{ marginTop: "18px" }}>
                     <div className="panel-head">
                       <div>
                         <b>System Configuration</b>
-                        <p>
-                          Choose which bot systems should be enabled.
-                        </p>
+                        <p>Choose which bot systems should be enabled.</p>
                       </div>
-
                       <SlidersHorizontal />
                     </div>
 
-                    <div
-                      className="server-data-list"
-                      style={{ marginTop: "15px" }}
-                    >
-                      {systems.map(
-                        ([name, description, Icon], index) => {
-                          const key = systemKeys[index];
-                          const checked = Boolean(
-                            guildSettings.systems[key]
-                          );
+                    <div className="server-data-list" style={{ marginTop: "15px" }}>
+                      {systems.map(([name, description, Icon], index) => {
+                        const key = systemKeys[index];
+                        const checked = Boolean(guildSettings.systems[key]);
 
-                          return (
-                            <div
-                              className="server-data-row"
-                              key={key}
-                            >
-                              <Icon size={18} />
+                        return (
+                          <div className="server-data-row" key={key}>
+                            <Icon size={18} />
 
-                              <div style={{ flex: 1 }}>
-                                <b>{name}</b>
-
-                                <small
-                                  style={{
-                                    display: "block",
-                                    marginTop: "4px"
-                                  }}
-                                >
-                                  {description}
-                                </small>
-                              </div>
-
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={e => {
-                                  setGuildSettings(old => ({
-                                    ...old,
-                                    systems: {
-                                      ...old.systems,
-                                      [key]: e.target.checked
-                                    }
-                                  }));
-
-                                  setSettingsError("");
-                                  setSettingsMessage("");
-                                }}
-                              />
+                            <div style={{ flex: 1 }}>
+                              <b>{name}</b>
+                              <small style={{ display: "block", marginTop: "4px" }}>
+                                {description}
+                              </small>
                             </div>
-                          );
-                        }
-                      )}
+
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={e => {
+                                setGuildSettings(old => ({
+                                  ...old,
+                                  systems: {
+                                    ...old.systems,
+                                    [key]: e.target.checked
+                                  }
+                                }));
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
 
                   {settingsError && (
-                    <p
-                      style={{
-                        color: "#ff7777",
-                        marginTop: "15px"
-                      }}
-                    >
+                    <p style={{ color: "#ff7777", marginTop: "15px" }}>
                       {settingsError}
                     </p>
                   )}
 
                   {settingsMessage && (
-                    <p
-                      style={{
-                        color: "#73e6a2",
-                        marginTop: "15px"
-                      }}
-                    >
+                    <p style={{ color: "#73e6a2", marginTop: "15px" }}>
                       {settingsMessage}
                     </p>
                   )}
@@ -2115,9 +2056,170 @@ export default function App() {
                     onClick={() => saveGuildSettings(guildSettings)}
                     disabled={settingsSaving}
                   >
-                    {settingsSaving
-                      ? "Saving..."
-                      : "Save Settings"}
+                    {settingsSaving ? "Saving..." : "Save Settings"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {page === "Tickets" && (
+            <div className="settings-page">
+              {!selectedServer ? (
+                <div className="panel placeholder">
+                  <Ticket />
+                  <h2>Select a server first</h2>
+                  <p>Choose a server before configuring its ticket system.</p>
+                  <button className="primary" onClick={backToServers}>
+                    <Server size={16} />
+                    Choose Server
+                  </button>
+                </div>
+              ) : settingsLoading || detailsLoading ? (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading ticket settings...</h2>
+                  <p>Retrieving your server channels and saved settings.</p>
+                </div>
+              ) : (
+                <>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <div>
+                        <b>Ticket System</b>
+                        <p>Configure where tickets are created and who can manage them.</p>
+                      </div>
+                      <Ticket />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "18px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Enable Ticket System</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>
+                          Allow members to create support tickets.
+                        </small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(guildSettings.systems?.tickets)}
+                        disabled={settingsSaving}
+                        onChange={e => setGuildSettings(old => ({
+                          ...old,
+                          systems: { ...old.systems, tickets: e.target.checked }
+                        }))}
+                      />
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "22px" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Ticket Category</label>
+                        <select
+                          value={guildSettings.tickets?.categoryId || ""}
+                          onChange={e => updateTicketSetting("categoryId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Select a category</option>
+                          {(serverDetails?.channels || []).filter(channel => channel.type === 4).map(channel => (
+                            <option key={channel.id} value={channel.id}>{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Panel Channel</label>
+                        <select
+                          value={guildSettings.tickets?.panelChannelId || ""}
+                          onChange={e => updateTicketSetting("panelChannelId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Use command channel</option>
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                            <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Staff Role</label>
+                        <select
+                          value={guildSettings.tickets?.staffRoleId || ""}
+                          onChange={e => updateTicketSetting("staffRoleId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Use Manage Server permission</option>
+                          {(serverDetails?.roles || []).filter(role => role.id !== selectedServer?.id).map(role => (
+                            <option key={role.id} value={role.id}>@{role.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Ticket Log Channel</label>
+                        <select
+                          value={guildSettings.tickets?.logChannelId || ""}
+                          onChange={e => updateTicketSetting("logChannelId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">No log channel</option>
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                            <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Ticket Panel Appearance</b>
+                        <p>Customize the message members see when opening a ticket.</p>
+                      </div>
+                      <SlidersHorizontal />
+                    </div>
+
+                    <div style={{ marginTop: "20px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Panel Title</label>
+                      <input
+                        value={guildSettings.tickets?.panelTitle ?? "JONY OS Support"}
+                        maxLength={100}
+                        onChange={e => updateTicketSetting("panelTitle", e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "16px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Panel Description</label>
+                      <textarea
+                        value={guildSettings.tickets?.panelDescription ?? "Press the button below to open a ticket."}
+                        maxLength={1000}
+                        rows={4}
+                        onChange={e => updateTicketSetting("panelDescription", e.target.value)}
+                        style={{ width: "100%", resize: "vertical", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "16px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Button Label</label>
+                      <input
+                        value={guildSettings.tickets?.buttonLabel ?? "Create Ticket"}
+                        maxLength={80}
+                        onChange={e => updateTicketSetting("buttonLabel", e.target.value)}
+                        style={{ width: "100%", maxWidth: "420px", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+                  </section>
+
+                  {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
+                  {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
+
+                  <button
+                    className="primary"
+                    style={{ marginTop: "18px" }}
+                    onClick={() => saveGuildSettings(guildSettings)}
+                    disabled={settingsSaving}
+                  >
+                    {settingsSaving ? "Saving..." : "Save Ticket Settings"}
                   </button>
                 </>
               )}
@@ -2139,6 +2241,7 @@ export default function App() {
             "Servers",
             "Server Dashboard",
             "Systems",
+            "Tickets",
             "Analytics",
             "Settings"
           ].includes(page) && (
@@ -2161,4 +2264,4 @@ export default function App() {
       </main>
     </div>
   );
-   }
+}
