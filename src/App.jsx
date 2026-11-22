@@ -1647,6 +1647,24 @@ export default function App() {
     }
   };
 
+  const refreshServerDetails = async () => {
+    if (!selectedServer) return;
+
+    setDetailsLoading(true);
+    setDetailsError("");
+
+    try {
+      const details = await fetchServerDetails(selectedServer.id);
+      setServerDetails(details);
+      setRolePage(1);
+      setChannelPage(1);
+    } catch (error) {
+      setDetailsError(error.message || "Could not load Discord server data.");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   const backToServers = () => {
     setSelectedServer(null);
     setServerDetails(null);
@@ -2429,6 +2447,31 @@ export default function App() {
                 </div>
               ) : (
                 <>
+                  <section className="panel" style={{ marginBottom: "18px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                      <div>
+                        <b>Discord Server Data</b>
+                        <p style={{ margin: "5px 0 0", color: "#aaa4b8" }}>
+                          {allChannels.length} channels · {allChannels.filter(channel => Number(channel.type) === 4).length} categories · {allRoles.length} roles loaded
+                        </p>
+                      </div>
+                      <button type="button" onClick={refreshServerDetails} disabled={detailsLoading} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.4)", background: "rgba(145,90,255,0.14)", color: "#d8c5ff", cursor: detailsLoading ? "not-allowed" : "pointer" }}>
+                        <RefreshCw size={15} className={detailsLoading ? "spin" : ""} />
+                        {detailsLoading ? "Refreshing..." : "Refresh Channels & Roles"}
+                      </button>
+                    </div>
+                    {detailsError && (
+                      <p style={{ color: "#ff8585", margin: "12px 0 0" }}>
+                        Discord data could not be loaded: {detailsError}. Check that DISCORD_BOT_TOKEN is set in Vercel and that the bot is a member of this server, then refresh.
+                      </p>
+                    )}
+                    {!detailsError && allChannels.length === 0 && allRoles.length === 0 && (
+                      <p style={{ color: "#ffbd75", margin: "12px 0 0" }}>
+                        Discord returned no channels or roles. Make sure the bot has been added to this server and refresh the data.
+                      </p>
+                    )}
+                  </section>
+
                   <section className="panel">
                     <div className="panel-head">
                       <div>
