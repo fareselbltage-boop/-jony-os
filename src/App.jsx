@@ -74,7 +74,11 @@ const DEFAULT_SETTINGS = {
   },
   welcome: {
     channelId: "",
-    message: "Welcome {user} to {server}!"
+    message: "Welcome {user} to {server}!",
+    useEmbed: true,
+    embedTitle: "Welcome to {server}!",
+    embedColor: "#8b5cf6",
+    showAvatar: true
   },
   economy: {},
   logs: {}
@@ -2532,9 +2536,69 @@ export default function App() {
                       <b style={{ display: "block", marginBottom: "8px" }}>Message Preview</b>
                       <p style={{ margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#d8d0e5" }}>
                         {(guildSettings.welcome?.message || "Welcome {user} to {server}!")
-                          .replaceAll("{user}", selectedServer?.name ? "@NewMember" : "@user")
-                          .replaceAll("{server}", serverDetails?.name || selectedServer?.name || "Your Server")}
+                          .replaceAll("{user}", "@NewMember")
+                          .replaceAll("{username}", "NewMember")
+                          .replaceAll("{server}", serverDetails?.name || selectedServer?.name || "Your Server")
+                          .replaceAll("{count}", "123")}
                       </p>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Embed Appearance</b>
+                        <p>Customize the welcome card sent by JONY OS.</p>
+                      </div>
+                      <SlidersHorizontal />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "18px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Use Embed</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>Send the welcome message as a rich Discord embed.</small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={guildSettings.welcome?.useEmbed !== false}
+                        onChange={e => updateWelcomeSetting("useEmbed", e.target.checked)}
+                      />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "12px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Show Member Avatar</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>Display the new member's avatar in the embed.</small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={guildSettings.welcome?.showAvatar !== false}
+                        onChange={e => updateWelcomeSetting("showAvatar", e.target.checked)}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "18px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Embed Title</label>
+                      <input
+                        value={guildSettings.welcome?.embedTitle ?? "Welcome to {server}!"}
+                        maxLength={200}
+                        onChange={e => updateWelcomeSetting("embedTitle", e.target.value)}
+                        placeholder="Welcome to {server}!"
+                        style={{ width: "100%", maxWidth: "520px", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "18px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Embed Color</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <input
+                          type="color"
+                          value={guildSettings.welcome?.embedColor || "#8b5cf6"}
+                          onChange={e => updateWelcomeSetting("embedColor", e.target.value)}
+                          style={{ width: "54px", height: "42px", padding: "3px", border: "1px solid rgba(145,90,255,0.3)", borderRadius: "8px", background: "transparent", cursor: "pointer" }}
+                        />
+                        <code>{guildSettings.welcome?.embedColor || "#8b5cf6"}</code>
+                      </div>
                     </div>
                   </section>
 
