@@ -2378,6 +2378,14 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">Select a category</option>
+                          {guildSettings.tickets?.categoryId &&
+                            !(serverDetails?.channels || []).some(channel =>
+                              String(channel.id) === String(guildSettings.tickets.categoryId)
+                            ) && (
+                              <option value={String(guildSettings.tickets.categoryId)}>
+                                Saved category ({guildSettings.tickets.categoryId})
+                              </option>
+                            )}
                           {(serverDetails?.channels || []).filter(channel => Number(channel.type) === 4).map(channel => (
                             <option key={channel.id} value={channel.id}>{channel.name}</option>
                           ))}
@@ -2392,6 +2400,14 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">Use command channel</option>
+                          {guildSettings.tickets?.panelChannelId &&
+                            !(serverDetails?.channels || []).some(channel =>
+                              String(channel.id) === String(guildSettings.tickets.panelChannelId)
+                            ) && (
+                              <option value={String(guildSettings.tickets.panelChannelId)}>
+                                Saved channel ({guildSettings.tickets.panelChannelId})
+                              </option>
+                            )}
                           {(serverDetails?.channels || []).filter(channel => [0, 5].includes(Number(channel.type))).map(channel => (
                             <option key={channel.id} value={channel.id}>#{channel.name}</option>
                           ))}
@@ -2420,6 +2436,14 @@ export default function App() {
                           style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
                         >
                           <option value="">No log channel</option>
+                          {guildSettings.tickets?.logChannelId &&
+                            !(serverDetails?.channels || []).some(channel =>
+                              String(channel.id) === String(guildSettings.tickets.logChannelId)
+                            ) && (
+                              <option value={String(guildSettings.tickets.logChannelId)}>
+                                Saved channel ({guildSettings.tickets.logChannelId})
+                              </option>
+                            )}
                           {(serverDetails?.channels || []).filter(channel => [0, 5].includes(Number(channel.type))).map(channel => (
                             <option key={channel.id} value={channel.id}>#{channel.name}</option>
                           ))}
