@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -28,7 +29,8 @@ import {
   Hash,
   Volume2,
   Folder,
-  Percent
+  Percent,
+  Plus
 } from "lucide-react";
 
 const systems = [
@@ -61,6 +63,7 @@ const DEFAULT_SETTINGS = {
   },
   moderation: {},
   tickets: {
+    prefix: "-",
     commands: {
       rename: { enabled: true, aliases: ["rename"] },
       add: { enabled: true, aliases: ["add"] },
@@ -574,6 +577,7 @@ function LandingPage({ onLogin }) {
     </div>
   );
 }
+
 function AnalyticsView({
   selectedServer,
   serverDetails,
@@ -1178,10 +1182,19 @@ export default function App() {
         tickets: {
           ...DEFAULT_SETTINGS.tickets,
           ...(saved.tickets || {}),
-          commands: {
-            ...DEFAULT_SETTINGS.tickets.commands,
-            ...(saved.tickets?.commands || {})
-          }
+          prefix: saved.tickets?.prefix ?? saved.prefix ?? DEFAULT_SETTINGS.tickets.prefix,
+          commands: Object.fromEntries(
+            Object.entries(DEFAULT_SETTINGS.tickets.commands).map(([key, defaults]) => {
+              const savedCommand = saved.tickets?.commands?.[key] || {};
+              return [key, {
+                ...defaults,
+                ...savedCommand,
+                aliases: Array.isArray(savedCommand.aliases) && savedCommand.aliases.length
+                  ? savedCommand.aliases
+                  : defaults.aliases
+              }];
+            })
+          )
         }
       });
     } catch (error) {
@@ -1211,7 +1224,8 @@ export default function App() {
           })
         }
       );
-            const result = await response.json();
+
+      const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.error || "Could not save settings");
@@ -1243,23 +1257,66 @@ export default function App() {
     await saveGuildSettings(nextSettings);
   };
 
-  const updateTicketCommand = (command, key, value) => {
+  const updateTicketSetting = (key, value) => {
     setGuildSettings(old => ({
       ...old,
       tickets: {
         ...(old.tickets || {}),
-        commands: {
-          ...(old.tickets?.commands || {}),
-          [command]: {
-            ...(old.tickets?.commands?.[command] || {}),
-            [key]: value
-          }
-        }
+        [key]: value
       }
     }));
-
     setSettingsError("");
     setSettingsMessage("");
+  };
+
+  const updateTicketCommand = (commandKey, patch) => {
+    setGuildSettings(old => {
+      const current = old.tickets?.commands?.[commandKey] || {
+        enabled: true,
+        aliases: [commandKey]
+      };
+
+      return {
+        ...old,
+        tickets: {
+          ...(old.tickets || {}),
+          commands: {
+            ...(old.tickets?.commands || {}),
+            [commandKey]: {
+              ...current,
+              ...patch
+            }
+          }
+        }
+      };
+    });
+    setSettingsError("");
+    setSettingsMessage("");
+  };
+
+  const updateTicketAlias = (commandKey, aliasIndex, value) => {
+    const aliases = [
+      ...(guildSettings.tickets?.commands?.[commandKey]?.aliases || [commandKey])
+    ];
+    aliases[aliasIndex] = value;
+    updateTicketCommand(commandKey, { aliases });
+  };
+
+  const addTicketAlias = commandKey => {
+    const aliases = [
+      ...(guildSettings.tickets?.commands?.[commandKey]?.aliases || [commandKey])
+    ];
+    aliases.push("");
+    updateTicketCommand(commandKey, { aliases });
+  };
+
+  const removeTicketAlias = (commandKey, aliasIndex) => {
+    const aliases = [
+      ...(guildSettings.tickets?.commands?.[commandKey]?.aliases || [commandKey])
+    ];
+    if (aliases.length <= 1) return;
+    aliases.splice(aliasIndex, 1);
+    updateTicketCommand(commandKey, { aliases });
   };
 
   const openServer = async server => {
@@ -1681,7 +1738,8 @@ export default function App() {
               )}
             </>
           )}
-                    {page === "Server Dashboard" && (
+
+          {page === "Server Dashboard" && (
             <>
               <div className="server-detail-actions">
                 <button className="link" onClick={backToServers}>
@@ -1937,7 +1995,18 @@ export default function App() {
 
                             <button
                               className="link"
-                              onClick={() => setPage("Settings")}
+                              onClick={() => {
+                                const configPages = {
+                                  "Moderation": "Moderation",
+                                  "Ticket System": "Tickets",
+                                  "Welcome": "Welcome",
+                                  "Auto Moderation": "Moderation",
+                                  "Leveling": "Economy",
+                                  "Suggestions": "Suggestions"
+                                };
+                                setPage(configPages[name] || name);
+                                setMenu(false);
+                              }}
                             >
                               Configure ›
                             </button>
@@ -1949,184 +2018,6 @@ export default function App() {
                 </>
               )}
             </>
-          )}
-
-          {page === "Tickets" && (
-            <div className="settings-page">
-              {!selectedServer ? (
-                <div className="panel placeholder">
-                  <Ticket />
-                  <h2>Select a server first</h2>
-                  <p>Choose a server to manage its ticket commands.</p>
-
-                  <button className="primary" onClick={backToServers}>
-                    <Server size={16} />
-                    Choose Server
-                  </button>
-                </div>
-              ) : settingsLoading ? (
-                <div className="panel placeholder">
-                  <Activity className="spin" />
-                  <h2>Loading ticket settings...</h2>
-                  <p>Retrieving saved settings from MongoDB.</p>
-                </div>
-              ) : (
-                <>
-                  <section className="panel">
-                    <div className="panel-head">
-                      <div>
-                        <b>Ticket Commands</b>
-                        <p>Enable or disable commands and manage their aliases.</p>
-                      </div>
-
-                      <Ticket />
-                    </div>
-
-                    <div className="server-data-list" style={{ marginTop: "18px" }}>
-                      {[
-                        ["rename", "Rename Ticket", "Rename an existing ticket."],
-                        ["add", "Add Member", "Allow a member to access the ticket."],
-                        ["remove", "Remove Member", "Remove a member from the ticket."],
-                        ["close", "Close Ticket", "Close a ticket without deleting it."],
-                        ["delete", "Delete Ticket", "Delete a ticket channel."]
-                      ].map(([key, title, description]) => {
-                        const command = guildSettings.tickets?.commands?.[key] || {
-                          enabled: true,
-                          aliases: [key]
-                        };
-
-                        return (
-                          <div
-                            key={key}
-                            className="server-data-row"
-                            style={{
-                              display: "block",
-                              padding: "16px",
-                              marginBottom: "12px",
-                              border: "1px solid rgba(145,90,255,0.18)",
-                              borderRadius: "12px"
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                gap: "12px"
-                              }}
-                            >
-                              <div>
-                                <b>{title}</b>
-                                <small style={{ display: "block", marginTop: "5px" }}>
-                                  {description}
-                                </small>
-                              </div>
-
-                              <label
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                  cursor: "pointer"
-                                }}
-                              >
-                                <span style={{ fontSize: "12px" }}>
-                                  {command.enabled !== false ? "Enabled" : "Disabled"}
-                                </span>
-
-                                <input
-                                  type="checkbox"
-                                  checked={command.enabled !== false}
-                                  disabled={settingsSaving}
-                                  onChange={e =>
-                                    updateTicketCommand(
-                                      key,
-                                      "enabled",
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                              </label>
-                            </div>
-
-                            <div style={{ marginTop: "14px" }}>
-                              <label
-                                style={{
-                                  display: "block",
-                                  marginBottom: "8px",
-                                  fontSize: "12px"
-                                }}
-                              >
-                                Command aliases
-                              </label>
-
-                              <input
-                                type="text"
-                                value={(command.aliases || [key]).join(", ")}
-                                disabled={settingsSaving}
-                                onChange={e => {
-                                  const aliases = [
-                                    ...new Set(
-                                      e.target.value
-                                        .split(",")
-                                        .map(alias =>
-                                          alias
-                                            .trim()
-                                            .toLowerCase()
-                                            .replace(/^[-!]+/, "")
-                                        )
-                                        .filter(Boolean)
-                                    )
-                                  ];
-
-                                  updateTicketCommand(key, "aliases", aliases);
-                                }}
-                                placeholder="rename, rn, change-name"
-                                style={{
-                                  width: "100%",
-                                  padding: "12px",
-                                  borderRadius: "9px",
-                                  border: "1px solid rgba(145,90,255,0.3)",
-                                  background: "rgba(255,255,255,0.04)",
-                                  color: "#fff",
-                                  outline: "none"
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <p style={{ color: "#8f899b", fontSize: "12px", marginTop: "12px" }}>
-                      Separate aliases with commas. Do not include the command prefix.
-                      The bot prefix is configured in General Settings.
-                    </p>
-                  </section>
-
-                  {settingsError && (
-                    <p style={{ color: "#ff7777", marginTop: "15px" }}>
-                      {settingsError}
-                    </p>
-                  )}
-
-                  {settingsMessage && (
-                    <p style={{ color: "#73e6a2", marginTop: "15px" }}>
-                      {settingsMessage}
-                    </p>
-                  )}
-
-                  <button
-                    className="primary"
-                    style={{ marginTop: "18px" }}
-                    onClick={() => saveGuildSettings(guildSettings)}
-                    disabled={settingsSaving}
-                  >
-                    {settingsSaving ? "Saving..." : "Save Ticket Settings"}
-                  </button>
-                </>
-              )}
-            </div>
           )}
 
           {page === "Settings" && (
@@ -2158,37 +2049,6 @@ export default function App() {
                       <Settings />
                     </div>
 
-                    <div style={{ marginTop: "22px" }}>
-                      <label style={{ display: "block", marginBottom: "9px" }}>
-                        Command Prefix
-                      </label>
-
-                      <input
-                        value={guildSettings.prefix}
-                        maxLength={5}
-                        onChange={e =>
-                          setGuildSettings(old => ({
-                            ...old,
-                            prefix: e.target.value
-                          }))
-                        }
-                        placeholder="-"
-                        style={{
-                          width: "100%",
-                          maxWidth: "300px",
-                          padding: "12px",
-                          borderRadius: "9px",
-                          border: "1px solid rgba(145,90,255,0.3)",
-                          background: "rgba(255,255,255,0.04)",
-                          color: "#fff",
-                          outline: "none"
-                        }}
-                      />
-
-                      <p style={{ marginTop: "8px", color: "#8f899b", fontSize: "12px" }}>
-                        Current prefix: {guildSettings.prefix || "Not set"}
-                      </p>
-                    </div>
                   </section>
 
                   <section className="panel" style={{ marginTop: "18px" }}>
@@ -2260,6 +2120,266 @@ export default function App() {
             </div>
           )}
 
+          {page === "Tickets" && (
+            <div className="settings-page">
+              {!selectedServer ? (
+                <div className="panel placeholder">
+                  <Ticket />
+                  <h2>Select a server first</h2>
+                  <p>Choose a server before configuring its ticket system.</p>
+                  <button className="primary" onClick={backToServers}>
+                    <Server size={16} />
+                    Choose Server
+                  </button>
+                </div>
+              ) : settingsLoading || detailsLoading ? (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading ticket settings...</h2>
+                  <p>Retrieving your server channels and saved settings.</p>
+                </div>
+              ) : (
+                <>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <div>
+                        <b>Ticket System</b>
+                        <p>Configure where tickets are created and who can manage them.</p>
+                      </div>
+                      <Ticket />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "18px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Enable Ticket System</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>
+                          Allow members to create support tickets.
+                        </small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(guildSettings.systems?.tickets)}
+                        disabled={settingsSaving}
+                        onChange={e => setGuildSettings(old => ({
+                          ...old,
+                          systems: { ...old.systems, tickets: e.target.checked }
+                        }))}
+                      />
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "22px" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Ticket Category</label>
+                        <select
+                          value={guildSettings.tickets?.categoryId || ""}
+                          onChange={e => updateTicketSetting("categoryId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Select a category</option>
+                          {(serverDetails?.channels || []).filter(channel => channel.type === 4).map(channel => (
+                            <option key={channel.id} value={channel.id}>{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Panel Channel</label>
+                        <select
+                          value={guildSettings.tickets?.panelChannelId || ""}
+                          onChange={e => updateTicketSetting("panelChannelId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Use command channel</option>
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                            <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Staff Role</label>
+                        <select
+                          value={guildSettings.tickets?.staffRoleId || ""}
+                          onChange={e => updateTicketSetting("staffRoleId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">Use Manage Server permission</option>
+                          {(serverDetails?.roles || []).filter(role => role.id !== selectedServer?.id).map(role => (
+                            <option key={role.id} value={role.id}>@{role.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px" }}>Ticket Log Channel</label>
+                        <select
+                          value={guildSettings.tickets?.logChannelId || ""}
+                          onChange={e => updateTicketSetting("logChannelId", e.target.value)}
+                          style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                        >
+                          <option value="">No log channel</option>
+                          {(serverDetails?.channels || []).filter(channel => [0, 5].includes(channel.type)).map(channel => (
+                            <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Ticket Commands</b>
+                        <p>Set the ticket command prefix, aliases, and availability.</p>
+                      </div>
+                      <SlidersHorizontal />
+                    </div>
+
+                    <div style={{ marginTop: "18px", maxWidth: "320px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Ticket Command Prefix</label>
+                      <input
+                        value={guildSettings.tickets?.prefix ?? "-"}
+                        maxLength={5}
+                        onChange={e => updateTicketSetting("prefix", e.target.value)}
+                        placeholder="-"
+                        style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                      <small style={{ display: "block", marginTop: "7px", color: "#8f899b" }}>
+                        This prefix is used only by ticket commands.
+                      </small>
+                    </div>
+
+                    <div style={{ display: "grid", gap: "14px", marginTop: "22px" }}>
+                      {[
+                        ["rename", "Rename Ticket", "Change the ticket channel name."],
+                        ["add", "Add Member", "Give a member access to the ticket."],
+                        ["remove", "Remove Member", "Remove a member's ticket access."],
+                        ["close", "Close Ticket", "Close a ticket without deleting it."],
+                        ["delete", "Delete Ticket", "Delete a ticket channel."]
+                      ].map(([key, label, description]) => {
+                        const command = guildSettings.tickets?.commands?.[key] || {
+                          enabled: true,
+                          aliases: [key]
+                        };
+                        const aliases = Array.isArray(command.aliases) && command.aliases.length
+                          ? command.aliases
+                          : [key];
+
+                        return (
+                          <div key={key} style={{ padding: "16px", border: "1px solid rgba(145,90,255,0.2)", borderRadius: "12px", background: "rgba(255,255,255,0.02)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                              <div>
+                                <b>{label}</b>
+                                <small style={{ display: "block", marginTop: "4px", color: "#8f899b" }}>{description}</small>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => updateTicketCommand(key, { enabled: !command.enabled })}
+                                disabled={settingsSaving}
+                                style={{ border: "1px solid", borderColor: command.enabled ? "rgba(80,220,140,0.4)" : "rgba(255,110,110,0.35)", background: command.enabled ? "rgba(80,220,140,0.12)" : "rgba(255,110,110,0.10)", color: command.enabled ? "#73e6a2" : "#ff8585", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
+                              >
+                                {command.enabled ? "Active" : "Inactive"}
+                              </button>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginTop: "16px", marginBottom: "9px" }}>
+                              <label style={{ color: "#c9c2d5", fontSize: "12px" }}>Command aliases</label>
+                              <button
+                                type="button"
+                                onClick={() => addTicketAlias(key)}
+                                title={`Add ${label} alias`}
+                                style={{ display: "inline-flex", alignItems: "center", gap: "5px", border: "1px solid rgba(145,90,255,0.35)", background: "rgba(145,90,255,0.13)", color: "#c7a8ff", borderRadius: "8px", padding: "6px 10px", cursor: "pointer" }}
+                              >
+                                <Plus size={15} /> Add alias
+                              </button>
+                            </div>
+
+                            <div style={{ display: "grid", gap: "8px" }}>
+                              {aliases.map((alias, aliasIndex) => (
+                                <div key={`${key}-${aliasIndex}`} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                  <span style={{ color: "#a99dbb", fontSize: "13px" }}>{guildSettings.tickets?.prefix || "-"}</span>
+                                  <input
+                                    value={alias}
+                                    maxLength={32}
+                                    onChange={e => updateTicketAlias(key, aliasIndex, e.target.value)}
+                                    placeholder={`${key} alias`}
+                                    style={{ flex: 1, minWidth: 0, padding: "10px", borderRadius: "8px", border: "1px solid rgba(145,90,255,0.25)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTicketAlias(key, aliasIndex)}
+                                    disabled={aliases.length <= 1}
+                                    title="Remove alias"
+                                    style={{ width: "36px", height: "36px", borderRadius: "8px", border: "1px solid rgba(255,110,110,0.25)", background: "rgba(255,110,110,0.08)", color: "#ff8585", cursor: aliases.length <= 1 ? "not-allowed" : "pointer", opacity: aliases.length <= 1 ? 0.35 : 1 }}
+                                  >
+                                    <X size={15} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Ticket Panel Appearance</b>
+                        <p>Customize the message members see when opening a ticket.</p>
+                      </div>
+                      <SlidersHorizontal />
+                    </div>
+
+                    <div style={{ marginTop: "20px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Panel Title</label>
+                      <input
+                        value={guildSettings.tickets?.panelTitle ?? "JONY OS Support"}
+                        maxLength={100}
+                        onChange={e => updateTicketSetting("panelTitle", e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "16px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Panel Description</label>
+                      <textarea
+                        value={guildSettings.tickets?.panelDescription ?? "Press the button below to open a ticket."}
+                        maxLength={1000}
+                        rows={4}
+                        onChange={e => updateTicketSetting("panelDescription", e.target.value)}
+                        style={{ width: "100%", resize: "vertical", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "16px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Button Label</label>
+                      <input
+                        value={guildSettings.tickets?.buttonLabel ?? "Create Ticket"}
+                        maxLength={80}
+                        onChange={e => updateTicketSetting("buttonLabel", e.target.value)}
+                        style={{ width: "100%", maxWidth: "420px", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                    </div>
+                  </section>
+
+                  {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
+                  {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
+
+                  <button
+                    className="primary"
+                    style={{ marginTop: "18px" }}
+                    onClick={() => saveGuildSettings(guildSettings)}
+                    disabled={settingsSaving}
+                  >
+                    {settingsSaving ? "Saving..." : "Save Ticket Settings"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {page === "Analytics" && (
             <AnalyticsView
               selectedServer={selectedServer}
@@ -2271,11 +2391,13 @@ export default function App() {
             />
           )}
 
-          {[
-            "Moderation",
-            "Welcome",
-            "Logs",
-            "Economy"
+          {![
+            "Servers",
+            "Server Dashboard",
+            "Systems",
+            "Tickets",
+            "Analytics",
+            "Settings"
           ].includes(page) && (
             <div className="panel placeholder">
               <Settings />
