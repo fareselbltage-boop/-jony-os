@@ -72,7 +72,10 @@ const DEFAULT_SETTINGS = {
       delete: { enabled: true, aliases: ["delete"] }
     }
   },
-  welcome: {},
+  welcome: {
+    channelId: "",
+    message: "Welcome {user} to {server}!"
+  },
   economy: {},
   logs: {}
 };
@@ -1233,6 +1236,10 @@ export default function App() {
               }];
             })
           )
+        },
+        welcome: {
+          ...DEFAULT_SETTINGS.welcome,
+          ...(saved.welcome || {})
         }
       });
     } catch (error) {
@@ -1293,6 +1300,18 @@ export default function App() {
     if (!selectedServer) return;
 
     await saveGuildSettings(nextSettings);
+  };
+
+  const updateWelcomeSetting = (key, value) => {
+    setGuildSettings(old => ({
+      ...old,
+      welcome: {
+        ...(old.welcome || {}),
+        [key]: value
+      }
+    }));
+    setSettingsError("");
+    setSettingsMessage("");
   };
 
   const updateTicketSetting = (key, value) => {
@@ -2418,6 +2437,123 @@ export default function App() {
             </div>
           )}
 
+
+          {page === "Welcome" && (
+            <div className="settings-page">
+              {!selectedServer ? (
+                <div className="panel placeholder">
+                  <Users />
+                  <h2>Select a server first</h2>
+                  <p>Choose a server before configuring welcome messages.</p>
+                  <button className="primary" onClick={backToServers}>
+                    <Server size={16} />
+                    Choose Server
+                  </button>
+                </div>
+              ) : settingsLoading || detailsLoading ? (
+                <div className="panel placeholder">
+                  <Activity className="spin" />
+                  <h2>Loading welcome settings...</h2>
+                  <p>Retrieving your server channels and saved settings.</p>
+                </div>
+              ) : (
+                <>
+                  <section className="panel">
+                    <div className="panel-head">
+                      <div>
+                        <b>Welcome System</b>
+                        <p>Send a custom greeting when someone joins your Discord server.</p>
+                      </div>
+                      <Users />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "18px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Enable Welcome System</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>
+                          Turn automatic welcome messages on or off.
+                        </small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(guildSettings.systems?.welcome)}
+                        disabled={settingsSaving}
+                        onChange={e => setGuildSettings(old => ({
+                          ...old,
+                          systems: { ...old.systems, welcome: e.target.checked }
+                        }))}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "22px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Welcome Channel</label>
+                      <select
+                        value={guildSettings.welcome?.channelId || ""}
+                        onChange={e => updateWelcomeSetting("channelId", e.target.value)}
+                        disabled={settingsSaving}
+                        style={{ width: "100%", maxWidth: "520px", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "#171321", color: "#fff" }}
+                      >
+                        <option value="">Select a channel</option>
+                        {(serverDetails?.channels || []).filter(channel => [0, 5].includes(Number(channel.type))).map(channel => (
+                          <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                        ))}
+                      </select>
+                      <small style={{ display: "block", marginTop: "7px", color: "#8f899b" }}>
+                        The bot must have permission to view and send messages in this channel.
+                      </small>
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Welcome Message</b>
+                        <p>Customize the message sent to every new member.</p>
+                      </div>
+                      <MessageSquare />
+                    </div>
+
+                    <div style={{ marginTop: "18px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>Message Template</label>
+                      <textarea
+                        value={guildSettings.welcome?.message ?? "Welcome {user} to {server}!"}
+                        maxLength={1800}
+                        rows={5}
+                        onChange={e => updateWelcomeSetting("message", e.target.value)}
+                        placeholder="Welcome {user} to {server}!"
+                        style={{ width: "100%", resize: "vertical", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                      <small style={{ display: "block", marginTop: "8px", color: "#aaa4b8" }}>
+                        Available placeholders: <code>{"{user}"}</code> for the member mention and <code>{"{server}"}</code> for your server name.
+                      </small>
+                    </div>
+
+                    <div style={{ marginTop: "18px", padding: "16px", borderRadius: "10px", background: "rgba(145,90,255,0.08)", border: "1px solid rgba(145,90,255,0.2)" }}>
+                      <b style={{ display: "block", marginBottom: "8px" }}>Message Preview</b>
+                      <p style={{ margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#d8d0e5" }}>
+                        {(guildSettings.welcome?.message || "Welcome {user} to {server}!")
+                          .replaceAll("{user}", selectedServer?.name ? "@NewMember" : "@user")
+                          .replaceAll("{server}", serverDetails?.name || selectedServer?.name || "Your Server")}
+                      </p>
+                    </div>
+                  </section>
+
+                  {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
+                  {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
+
+                  <button
+                    className="primary"
+                    style={{ marginTop: "18px" }}
+                    onClick={() => saveGuildSettings(guildSettings)}
+                    disabled={settingsSaving}
+                  >
+                    {settingsSaving ? "Saving..." : "Save Welcome Settings"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {page === "Analytics" && (
             <AnalyticsView
               selectedServer={selectedServer}
@@ -2434,6 +2570,7 @@ export default function App() {
             "Server Dashboard",
             "Systems",
             "Tickets",
+            "Welcome",
             "Analytics",
             "Settings"
           ].includes(page) && (
