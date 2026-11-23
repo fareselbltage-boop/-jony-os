@@ -64,7 +64,25 @@ const DEFAULT_SETTINGS = {
     leveling: false,
     suggestions: true
   },
-  moderation: {},
+  moderation: {
+    enabled: true,
+    prefix: "-",
+    staffRoleId: "",
+    logChannelId: "",
+    defaultTimeout: 10,
+    successMessage: "Moderation action completed.",
+    permissionMessage: "You do not have permission to use this command.",
+    commands: {
+      ban: { enabled: true },
+      kick: { enabled: true },
+      timeout: { enabled: true },
+      untimeout: { enabled: true },
+      warn: { enabled: true },
+      clear: { enabled: true },
+      lock: { enabled: true },
+      unlock: { enabled: true }
+    }
+  },
   tickets: {
     prefix: "-",
     commands: {
@@ -1041,6 +1059,337 @@ function AnalyticsView({
   );
 }
 
+
+function ModerationView({
+  selectedServer,
+  serverDetails,
+  guildSettings,
+  settingsLoading,
+  settingsSaving,
+  settingsError,
+  settingsMessage,
+  onSave
+}) {
+  const moderation = guildSettings.moderation || {};
+  const commands = moderation.commands || {};
+
+  const commandList = [
+    ["ban", "Ban", "Ban a member from the server.", Shield],
+    ["kick", "Kick", "Remove a member from the server.", X],
+    ["timeout", "Timeout", "Temporarily restrict a member.", Lock],
+    ["untimeout", "Remove Timeout", "Remove an active timeout.", RefreshCw],
+    ["warn", "Warn", "Issue a moderation warning.", ShieldCheck],
+    ["clear", "Clear Messages", "Bulk delete recent messages.", Trash2],
+    ["lock", "Lock Channel", "Prevent members from sending messages.", Lock],
+    ["unlock", "Unlock Channel", "Restore member message permissions.", Check]
+  ];
+
+  const roles = (serverDetails?.roles || [])
+    .filter(role => role.id && role.name !== "@everyone" && !role.managed)
+    .sort((a, b) => b.position - a.position);
+
+  const channels = (serverDetails?.channels || [])
+    .filter(channel => [0, 5].includes(Number(channel.type)))
+    .sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+
+  const updateModeration = (key, value) => {
+    const next = {
+      ...guildSettings,
+      moderation: {
+        ...moderation,
+        [key]: value
+      }
+    };
+    onSave(next, false);
+  };
+
+  const updateCommand = (key, value) => {
+    const next = {
+      ...guildSettings,
+      moderation: {
+        ...moderation,
+        commands: {
+          ...commands,
+          [key]: value
+        }
+      }
+    };
+    onSave(next, false);
+  };
+
+  if (!selectedServer) {
+    return (
+      <div className="panel placeholder">
+        <Shield />
+        <h2>Select a server first</h2>
+        <p>Choose a server before changing moderation settings.</p>
+      </div>
+    );
+  }
+
+  if (settingsLoading) {
+    return (
+      <div className="panel placeholder">
+        <Activity className="spin" />
+        <h2>Loading moderation...</h2>
+        <p>Retrieving saved moderation settings from MongoDB.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="settings-page">
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <b>Moderation System</b>
+            <p>Configure who can use moderation commands and where actions are logged.</p>
+          </div>
+          <Shield />
+        </div>
+
+        <div className="server-data-row" style={{ marginTop: "18px" }}>
+          <div style={{ flex: 1 }}>
+            <b>Enable Moderation</b>
+            <small style={{ display: "block", marginTop: "4px" }}>
+              Turn the moderation system on or off for this server.
+            </small>
+          </div>
+          <input
+            type="checkbox"
+            checked={moderation.enabled !== false}
+            disabled={settingsSaving}
+            onChange={e => updateModeration("enabled", e.target.checked)}
+          />
+        </div>
+
+        <div className="grid" style={{ marginTop: "18px" }}>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Command Prefix</label>
+            <input
+              value={moderation.prefix ?? guildSettings.prefix ?? "-"}
+              maxLength={5}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("prefix", e.target.value)}
+              placeholder="-"
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff"
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Moderator Role</label>
+            <select
+              value={moderation.staffRoleId || ""}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("staffRoleId", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "#17131f",
+                color: "#fff"
+              }}
+            >
+              <option value="">Administrator only</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>@{role.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Moderation Log Channel</label>
+            <select
+              value={moderation.logChannelId || ""}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("logChannelId", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "#17131f",
+                color: "#fff"
+              }}
+            >
+              <option value="">No log channel</option>
+              {channels.map(channel => (
+                <option key={channel.id} value={channel.id}>#{channel.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Default Timeout</label>
+            <select
+              value={String(moderation.defaultTimeout ?? 10)}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("defaultTimeout", Number(e.target.value))}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "#17131f",
+                color: "#fff"
+              }}
+            >
+              <option value="1">1 minute</option>
+              <option value="5">5 minutes</option>
+              <option value="10">10 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="1440">1 day</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: "18px" }}>
+        <div className="panel-head">
+          <div>
+            <b>Moderation Commands</b>
+            <p>Enable or disable individual moderation actions.</p>
+          </div>
+          <SlidersHorizontal />
+        </div>
+
+        <div style={{ display: "grid", gap: "10px", marginTop: "18px" }}>
+          {commandList.map(([key, name, description, Icon]) => (
+            <div
+              className="server-data-row"
+              key={key}
+              style={{
+                padding: "14px",
+                borderRadius: "10px",
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.06)"
+              }}
+            >
+              <span
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "9px",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "rgba(145,90,255,0.12)",
+                  color: "#c7a8ff"
+                }}
+              >
+                <Icon size={16} />
+              </span>
+
+              <div style={{ flex: 1 }}>
+                <b>{name}</b>
+                <small style={{ display: "block", marginTop: "3px" }}>{description}</small>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={commands[key]?.enabled !== false}
+                disabled={settingsSaving || moderation.enabled === false}
+                onChange={e => updateCommand(key, {
+                  ...(commands[key] || {}),
+                  enabled: e.target.checked
+                })}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: "18px" }}>
+        <div className="panel-head">
+          <div>
+            <b>Moderation Messages</b>
+            <p>Customize the basic responses used by the moderation system.</p>
+          </div>
+          <MessageSquare />
+        </div>
+
+        <div style={{ marginTop: "18px", display: "grid", gap: "14px" }}>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Success Message</label>
+            <input
+              value={moderation.successMessage ?? "Moderation action completed."}
+              maxLength={500}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("successMessage", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff"
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Permission Denied Message</label>
+            <input
+              value={moderation.permissionMessage ?? "You do not have permission to use this command."}
+              maxLength={500}
+              disabled={settingsSaving}
+              onChange={e => updateModeration("permissionMessage", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "9px",
+                border: "1px solid rgba(145,90,255,0.3)",
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff"
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
+      {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
+
+      <div style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>
+        <button
+          className="primary"
+          disabled={settingsSaving}
+          onClick={() => onSave({
+            ...guildSettings,
+            moderation: {
+              ...moderation,
+              commands: Object.fromEntries(
+                commandList.map(([key]) => [
+                  key,
+                  {
+                    ...(commands[key] || {}),
+                    enabled: commands[key]?.enabled !== false
+                  }
+                ])
+              )
+            }
+          }, true)}
+        >
+          {settingsSaving ? "Saving..." : "Save Moderation Settings"}
+        </button>
+
+        <span className="live" style={{ alignSelf: "center" }}>
+          {commandList.filter(([key]) => commands[key]?.enabled !== false).length} COMMANDS ACTIVE
+        </span>
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
   const [page, setPage] = useState("Servers");
   const [menu, setMenu] = useState(false);
@@ -1254,6 +1603,19 @@ export default function App() {
             })
           )
         },
+        moderation: {
+          ...DEFAULT_SETTINGS.moderation,
+          ...(saved.moderation || {}),
+          commands: Object.fromEntries(
+            Object.entries(DEFAULT_SETTINGS.moderation.commands).map(([key, defaults]) => [
+              key,
+              {
+                ...defaults,
+                ...(saved.moderation?.commands?.[key] || {})
+              }
+            ])
+          )
+        },
         welcome: {
           ...DEFAULT_SETTINGS.welcome,
           ...(saved.welcome || {})
@@ -1317,6 +1679,15 @@ export default function App() {
     if (!selectedServer) return;
 
     await saveGuildSettings(nextSettings);
+  };
+
+  const updateModerationSettings = (nextSettings, shouldSave = false) => {
+    setGuildSettings(nextSettings);
+    setSettingsError("");
+    setSettingsMessage("");
+    if (shouldSave && selectedServer) {
+      saveGuildSettings(nextSettings);
+    }
   };
 
   const loadWelcomeTemplate = async serverId => {
@@ -1884,7 +2255,9 @@ export default function App() {
                       ? "Monitor your selected Discord server with live statistics."
                       : page === "Settings"
                         ? "Configure and save your server preferences."
-                        : `Manage your ${page.toLowerCase()} workspace.`}
+                        : page === "Moderation"
+                          ? "Configure moderation commands, permissions and logging."
+                          : `Manage your ${page.toLowerCase()} workspace.`}
               </p>
             </div>
 
@@ -2325,6 +2698,19 @@ export default function App() {
                 </>
               )}
             </>
+          )}
+
+          {page === "Moderation" && (
+            <ModerationView
+              selectedServer={selectedServer}
+              serverDetails={serverDetails}
+              guildSettings={guildSettings}
+              settingsLoading={settingsLoading}
+              settingsSaving={settingsSaving}
+              settingsError={settingsError}
+              settingsMessage={settingsMessage}
+              onSave={updateModerationSettings}
+            />
           )}
 
           {page === "Settings" && (
