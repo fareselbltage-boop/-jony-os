@@ -90,7 +90,12 @@ const DEFAULT_SETTINGS = {
       add: { enabled: true, aliases: ["add"] },
       remove: { enabled: true, aliases: ["remove"] },
       close: { enabled: true, aliases: ["close"] },
-      delete: { enabled: true, aliases: ["delete"] }
+      delete: { enabled: true, aliases: ["delete"] },
+      come: { enabled: true, aliases: ["come"] }
+    },
+    come: {
+      enabled: true,
+      message: "Hello {user}! A staff member needs you in your ticket: {ticket}"
     }
   },
   welcome: {
@@ -3360,7 +3365,8 @@ export default function App() {
                         ["add", "Add Member", "Give a member access to the ticket."],
                         ["remove", "Remove Member", "Remove a member's ticket access."],
                         ["close", "Close Ticket", "Close a ticket without deleting it."],
-                        ["delete", "Delete Ticket", "Delete a ticket channel."]
+                        ["delete", "Delete Ticket", "Delete a ticket channel."],
+                        ["come", "Call Member", "DM a member with a link to this ticket."]
                       ].map(([key, label, description]) => {
                         const command = guildSettings.tickets?.commands?.[key] || {
                           enabled: true,
@@ -3466,6 +3472,52 @@ export default function App() {
                         onChange={e => updateTicketSetting("buttonLabel", e.target.value)}
                         style={{ width: "100%", maxWidth: "420px", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
                       />
+                    </div>
+                  </section>
+
+                  <section className="panel" style={{ marginTop: "18px" }}>
+                    <div className="panel-head">
+                      <div>
+                        <b>Come Command DM</b>
+                        <p>Configure the private message sent when staff use the come command.</p>
+                      </div>
+                      <MessageSquare />
+                    </div>
+
+                    <div className="server-data-row" style={{ marginTop: "18px" }}>
+                      <div style={{ flex: 1 }}>
+                        <b>Enable Come Command</b>
+                        <small style={{ display: "block", marginTop: "4px" }}>
+                          Allow staff to DM a member with the current ticket link.
+                        </small>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={guildSettings.tickets?.come?.enabled !== false}
+                        disabled={settingsSaving}
+                        onChange={e => updateTicketSetting("come", {
+                          ...(guildSettings.tickets?.come || {}),
+                          enabled: e.target.checked
+                        })}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: "18px" }}>
+                      <label style={{ display: "block", marginBottom: "8px" }}>DM Message Template</label>
+                      <textarea
+                        value={guildSettings.tickets?.come?.message ?? "Hello {user}! A staff member needs you in your ticket: {ticket}"}
+                        maxLength={1800}
+                        rows={5}
+                        onChange={e => updateTicketSetting("come", {
+                          ...(guildSettings.tickets?.come || {}),
+                          message: e.target.value
+                        })}
+                        placeholder="Hello {user}! Please join your ticket: {ticket}"
+                        style={{ width: "100%", resize: "vertical", padding: "12px", borderRadius: "9px", border: "1px solid rgba(145,90,255,0.3)", background: "rgba(255,255,255,0.04)", color: "#fff" }}
+                      />
+                      <small style={{ display: "block", marginTop: "8px", color: "#8f899b" }}>
+                        Placeholders: <code>{"{user}"}</code>, <code>{"{server}"}</code>, <code>{"{ticket}"}</code>, <code>{"{channel}"}</code>.
+                      </small>
                     </div>
                   </section>
 
