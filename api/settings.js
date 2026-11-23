@@ -1,6 +1,48 @@
 
 import getDatabase from "./db.js";
 
+const guildAuthorizationCache = new Map();
+const GUILD_AUTH_CACHE_TTL = 60 * 1000;
+
+function getRetryAfter(response, data) {
+  const headerValue = Number(response.headers.get("retry-after"));
+  const bodyValue = Number(data?.retry_after);
+
+  const seconds =
+    Number.isFinite(bodyValue) && bodyValue > 0
+      ? bodyValue
+      : Number.isFinite(headerValue) && headerValue > 0
+        ? headerValue
+        : 1;
+
+  return Math.ceil(seconds);
+}
+
+function getCachedGuilds(userToken) {
+  const cached = guildAuthorizationCache.get(userToken);
+
+  if (!cached) return null;
+
+  if (Date.now() - cached.time >= GUILD_AUTH_CACHE_TTL) {
+    guildAuthorizationCache.delete(userToken);
+    return null;
+  }
+
+  return cached.guilds;
+}
+
+function setCachedGuilds(userToken, guilds) {
+  if (guildAuthorizationCache.size >= 100) {
+    const oldestKey = guildAuthorizationCache.keys().next().value;
+    if (oldestKey) guildAuthorizationCache.delete(oldestKey);
+  }
+
+  guildAuthorizationCache.set(userToken, {
+    time: Date.now(),
+    guilds
+  });
+}
+
 function getCookies(header = "") {
   const cookies = {};
 
@@ -148,8 +190,15 @@ async function authorizeGuild(req, res, guildId) {
   const guildsUrl = "https://discord.com/api/v10/users/@me/guilds";
 
   let result = null;
+  let cachedGuilds = userToken ? getCachedGuilds(userToken) : null;
 
-  if (userToken) {
+  if (cachedGuilds) {
+    result = {
+      ok: true,
+      status: 200,
+      data: cachedGuilds
+    };
+  } else if (userToken) {
     result = await fetchDiscord(guildsUrl, {
       Authorization: `Bearer ${userToken}`
     });
@@ -188,6 +237,14 @@ async function authorizeGuild(req, res, guildId) {
   }
 
   if (!result.ok) {
+    if (result.status === 429) {
+      return {
+        error: "Discord is rate limiting requests. Please wait and try again.",
+        status: 429,
+        retryAfter: result.retryAfter || 1
+      };
+    }
+
     console.error("Discord guild verification failed:", {
       status: result.status,
       message: result.data?.message,
@@ -217,6 +274,10 @@ async function authorizeGuild(req, res, guildId) {
       error: "Invalid Discord response",
       status: 502
     };
+  }
+
+  if (!cachedGuilds) {
+    setCachedGuilds(userToken, result.data);
   }
 
   const guild = result.data.find(item => item.id === guildId);
