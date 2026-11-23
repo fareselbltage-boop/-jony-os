@@ -380,7 +380,43 @@ const defaultSettings = {
   tickets: {},
   welcome: {},
   economy: {},
-  logs: {}
+logs: {
+    enabled: true,
+    embedColor: "#8b5cf6",
+    channels: {
+      messages: "",
+      members: "",
+      moderation: "",
+      roles: "",
+      channels: "",
+      voice: "",
+      tickets: "",
+      server: ""
+    },
+    events: {
+      messageDelete: true,
+      messageEdit: true,
+      memberJoin: true,
+      memberLeave: true,
+      memberUpdate: true,
+      ban: true,
+      unban: true,
+      timeout: true,
+      roleCreate: true,
+      roleUpdate: true,
+      roleDelete: true,
+      channelCreate: true,
+      channelUpdate: true,
+      channelDelete: true,
+      voiceJoin: true,
+      voiceLeave: true,
+      voiceMove: true,
+      ticketCreate: true,
+      ticketClose: true,
+      inviteCreate: true,
+      inviteDelete: true
+    }
+  }
 };
 
 export default async function handler(req, res) {
