@@ -358,7 +358,25 @@ function isSafeObject(value, depth = 0) {
 const defaultSettings = {
   prefix: "-",
   systems: {},
-  moderation: {},
+  moderation: {
+    enabled: true,
+    prefix: "-",
+    staffRoleId: "",
+    logChannelId: "",
+    defaultTimeout: 10,
+    successMessage: "Moderation action completed.",
+    permissionMessage: "You do not have permission to use this command.",
+    commands: {
+      ban: { enabled: true },
+      kick: { enabled: true },
+      timeout: { enabled: true },
+      untimeout: { enabled: true },
+      warn: { enabled: true },
+      clear: { enabled: true },
+      lock: { enabled: true },
+      unlock: { enabled: true }
+    }
+  },
   tickets: {},
   welcome: {},
   economy: {},
