@@ -1,4 +1,60 @@
 
+const userGuildCache = new Map();
+const USER_GUILD_CACHE_TTL = 60 * 1000;
+
+const serverDataCache = new Map();
+const SERVER_DATA_CACHE_TTL = 30 * 1000;
+
+function getCachedUserGuilds(userToken) {
+  const cached = userGuildCache.get(userToken);
+
+  if (!cached) return null;
+
+  if (Date.now() - cached.time >= USER_GUILD_CACHE_TTL) {
+    userGuildCache.delete(userToken);
+    return null;
+  }
+
+  return cached.guilds;
+}
+
+function setCachedUserGuilds(userToken, guilds) {
+  if (userGuildCache.size >= 100) {
+    const oldestKey = userGuildCache.keys().next().value;
+    if (oldestKey) userGuildCache.delete(oldestKey);
+  }
+
+  userGuildCache.set(userToken, {
+    time: Date.now(),
+    guilds
+  });
+}
+
+function getCachedServerData(guildId) {
+  const cached = serverDataCache.get(guildId);
+
+  if (!cached) return null;
+
+  if (Date.now() - cached.time >= SERVER_DATA_CACHE_TTL) {
+    serverDataCache.delete(guildId);
+    return null;
+  }
+
+  return cached.data;
+}
+
+function setCachedServerData(guildId, data) {
+  if (serverDataCache.size >= 100) {
+    const oldestKey = serverDataCache.keys().next().value;
+    if (oldestKey) serverDataCache.delete(oldestKey);
+  }
+
+  serverDataCache.set(guildId, {
+    time: Date.now(),
+    data
+  });
+}
+
 function getCookies(header = "") {
   const cookies = {};
 
@@ -209,11 +265,21 @@ export default async function handler(req, res) {
   try {
     const guildsUrl = "https://discord.com/api/v10/users/@me/guilds";
 
-    let userGuildsResult = userToken
-      ? await fetchDiscord(guildsUrl, {
-          Authorization: `Bearer ${userToken}`
-        })
+    const cachedUserGuilds = userToken
+      ? getCachedUserGuilds(userToken)
       : null;
+
+    let userGuildsResult = cachedUserGuilds
+      ? {
+          ok: true,
+          status: 200,
+          data: cachedUserGuilds
+        }
+      : userToken
+        ? await fetchDiscord(guildsUrl, {
+            Authorization: `Bearer ${userToken}`
+          })
+        : null;
 
     if (!userGuildsResult || userGuildsResult.status === 401) {
       if (!refreshToken) {
@@ -256,6 +322,10 @@ export default async function handler(req, res) {
       });
     }
 
+    if (!cachedUserGuilds) {
+      setCachedUserGuilds(userToken, userGuildsResult.data);
+    }
+
     const allowedGuild = userGuildsResult.data.find(guild => {
       if (guild.id !== guildId) return false;
 
@@ -271,6 +341,14 @@ export default async function handler(req, res) {
     if (!allowedGuild) {
       return res.status(403).json({
         error: "You cannot manage this server"
+      });
+    }
+
+    const cachedServerData = getCachedServerData(guildId);
+
+    if (cachedServerData) {
+      return res.status(200).json({
+        server: cachedServerData
       });
     }
 
@@ -349,21 +427,25 @@ export default async function handler(req, res) {
       `[JONY OS] Loaded ${channels.length} channels and ${roles.length} roles for ${guild.name}`
     );
 
+    const serverData = {
+      id: guild.id,
+      name: guild.name,
+      icon: guild.icon
+        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${guild.icon.startsWith("a_") ? "gif" : "png"}?size=256`
+        : null,
+      botAdded: true,
+      memberCount: guild.approximate_member_count ?? null,
+      onlineCount: guild.approximate_presence_count ?? null,
+      channelCount: channels.length,
+      roleCount: roles.length,
+      channels,
+      roles
+    };
+
+    setCachedServerData(guildId, serverData);
+
     return res.status(200).json({
-      server: {
-        id: guild.id,
-        name: guild.name,
-        icon: guild.icon
-          ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${guild.icon.startsWith("a_") ? "gif" : "png"}?size=256`
-          : null,
-        botAdded: true,
-        memberCount: guild.approximate_member_count ?? null,
-        onlineCount: guild.approximate_presence_count ?? null,
-        channelCount: channels.length,
-        roleCount: roles.length,
-        channels,
-        roles
-      }
+      server: serverData
     });
   } catch (error) {
     console.error("Server API error:", error);
