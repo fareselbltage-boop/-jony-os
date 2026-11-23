@@ -102,7 +102,43 @@ const DEFAULT_SETTINGS = {
     showAvatar: true
   },
   economy: {},
-  logs: {}
+  logs: {
+    enabled: true,
+    embedColor: "#8b5cf6",
+    channels: {
+      messages: "",
+      members: "",
+      moderation: "",
+      roles: "",
+      channels: "",
+      voice: "",
+      tickets: "",
+      server: ""
+    },
+    events: {
+      messageDelete: true,
+      messageEdit: true,
+      memberJoin: true,
+      memberLeave: true,
+      memberUpdate: true,
+      ban: true,
+      unban: true,
+      timeout: true,
+      roleCreate: true,
+      roleUpdate: true,
+      roleDelete: true,
+      channelCreate: true,
+      channelUpdate: true,
+      channelDelete: true,
+      voiceJoin: true,
+      voiceLeave: true,
+      voiceMove: true,
+      ticketCreate: true,
+      ticketClose: true,
+      inviteCreate: true,
+      inviteDelete: true
+    }
+  }
 };
 
 function getAvatar(user) {
@@ -1383,6 +1419,269 @@ function ModerationView({
 
         <span className="live" style={{ alignSelf: "center" }}>
           {commandList.filter(([key]) => commands[key]?.enabled !== false).length} COMMANDS ACTIVE
+        </span>
+      </div>
+    </div>
+  );
+}
+
+
+
+function LogsView({
+  selectedServer,
+  serverDetails,
+  guildSettings,
+  settingsLoading,
+  settingsSaving,
+  settingsError,
+  settingsMessage,
+  onSave
+}) {
+  const logs = guildSettings.logs || {};
+  const channelsConfig = logs.channels || {};
+  const events = logs.events || {};
+
+  const channelGroups = [
+    ["messages", "Message Logs", "Deleted and edited messages", MessageSquare],
+    ["members", "Member Logs", "Member joins, leaves and profile updates", Users],
+    ["moderation", "Moderation Logs", "Bans, unbans and timeouts", Shield],
+    ["roles", "Role Logs", "Role creation, updates and deletion", ShieldCheck],
+    ["channels", "Channel Logs", "Channel creation, updates and deletion", Hash],
+    ["voice", "Voice Logs", "Voice joins, leaves and channel moves", Volume2],
+    ["tickets", "Ticket Logs", "Ticket creation and closure", Ticket],
+    ["server", "Server Logs", "Invite creation and deletion", Server]
+  ];
+
+  const eventGroups = [
+    ["Messages", [
+      ["messageDelete", "Message Deleted"],
+      ["messageEdit", "Message Edited"]
+    ]],
+    ["Members", [
+      ["memberJoin", "Member Joined"],
+      ["memberLeave", "Member Left"],
+      ["memberUpdate", "Member Updated"]
+    ]],
+    ["Moderation", [
+      ["ban", "Member Banned"],
+      ["unban", "Member Unbanned"],
+      ["timeout", "Member Timed Out"]
+    ]],
+    ["Roles", [
+      ["roleCreate", "Role Created"],
+      ["roleUpdate", "Role Updated"],
+      ["roleDelete", "Role Deleted"]
+    ]],
+    ["Channels", [
+      ["channelCreate", "Channel Created"],
+      ["channelUpdate", "Channel Updated"],
+      ["channelDelete", "Channel Deleted"]
+    ]],
+    ["Voice", [
+      ["voiceJoin", "Joined Voice Channel"],
+      ["voiceLeave", "Left Voice Channel"],
+      ["voiceMove", "Moved Voice Channel"]
+    ]],
+    ["Tickets", [
+      ["ticketCreate", "Ticket Opened"],
+      ["ticketClose", "Ticket Closed"]
+    ]],
+    ["Server", [
+      ["inviteCreate", "Invite Created"],
+      ["inviteDelete", "Invite Deleted"]
+    ]]
+  ];
+
+  const textChannels = (serverDetails?.channels || [])
+    .filter(channel => [0, 5].includes(Number(channel.type)))
+    .sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+
+  const updateLogs = patch => {
+    onSave({
+      ...guildSettings,
+      logs: {
+        ...logs,
+        ...patch
+      }
+    }, false);
+  };
+
+  const updateChannel = (key, value) => {
+    updateLogs({
+      channels: {
+        ...channelsConfig,
+        [key]: value
+      }
+    });
+  };
+
+  const updateEvent = (key, value) => {
+    updateLogs({
+      events: {
+        ...events,
+        [key]: value
+      }
+    });
+  };
+
+  if (!selectedServer) {
+    return (
+      <div className="panel placeholder">
+        <ClipboardList />
+        <h2>Select a server first</h2>
+        <p>Choose a server before configuring activity logs.</p>
+      </div>
+    );
+  }
+
+  if (settingsLoading || !serverDetails) {
+    return (
+      <div className="panel placeholder">
+        <Activity className="spin" />
+        <h2>Loading log settings...</h2>
+        <p>Retrieving your server channels and saved settings.</p>
+      </div>
+    );
+  }
+
+  const inputStyle = {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "9px",
+    border: "1px solid rgba(145,90,255,0.3)",
+    background: "#17131f",
+    color: "#fff"
+  };
+
+  return (
+    <div className="settings-page">
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <b>Activity Logs</b>
+            <p>Send server events to dedicated channels. Every event should be delivered as a Discord Embed.</p>
+          </div>
+          <ClipboardList />
+        </div>
+
+        <div className="server-data-row" style={{ marginTop: "18px" }}>
+          <div style={{ flex: 1 }}>
+            <b>Enable Activity Logs</b>
+            <small style={{ display: "block", marginTop: "4px" }}>Turn all configured event logging on or off.</small>
+          </div>
+          <input
+            type="checkbox"
+            checked={logs.enabled !== false}
+            disabled={settingsSaving}
+            onChange={e => updateLogs({ enabled: e.target.checked })}
+          />
+        </div>
+
+        <div className="grid" style={{ marginTop: "18px" }}>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Embed Color</label>
+            <input
+              type="color"
+              value={logs.embedColor || "#8b5cf6"}
+              disabled={settingsSaving}
+              onChange={e => updateLogs({ embedColor: e.target.value })}
+              style={{ ...inputStyle, height: "44px", padding: "5px" }}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px" }}>Available Text Channels</label>
+            <div style={{ ...inputStyle, color: "#aaa4b8" }}>{textChannels.length} text channels loaded</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: "18px" }}>
+        <div className="panel-head">
+          <div>
+            <b>Log Channel Routing</b>
+            <p>Choose where each category of event should be sent.</p>
+          </div>
+          <Hash />
+        </div>
+
+        <div style={{ display: "grid", gap: "12px", marginTop: "18px" }}>
+          {channelGroups.map(([key, title, description, Icon]) => (
+            <div className="server-data-row" key={key} style={{ gap: "14px", flexWrap: "wrap" }}>
+              <span style={{ width: "36px", height: "36px", borderRadius: "9px", display: "grid", placeItems: "center", background: "rgba(145,90,255,0.12)", color: "#c7a8ff" }}>
+                <Icon size={17} />
+              </span>
+              <div style={{ flex: 1, minWidth: "150px" }}>
+                <b>{title}</b>
+                <small style={{ display: "block", marginTop: "3px" }}>{description}</small>
+              </div>
+              <select
+                value={channelsConfig[key] || ""}
+                disabled={settingsSaving || logs.enabled === false}
+                onChange={e => updateChannel(key, e.target.value)}
+                style={{ ...inputStyle, maxWidth: "260px" }}
+              >
+                <option value="">Not configured</option>
+                {textChannels.map(channel => (
+                  <option key={channel.id} value={channel.id}>#{channel.name}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: "18px" }}>
+        <div className="panel-head">
+          <div>
+            <b>Event Controls</b>
+            <p>Enable or disable individual events. All enabled events use Discord embeds.</p>
+          </div>
+          <SlidersHorizontal />
+        </div>
+
+        <div style={{ display: "grid", gap: "18px", marginTop: "18px" }}>
+          {eventGroups.map(([group, items]) => (
+            <div key={group}>
+              <b style={{ display: "block", marginBottom: "10px" }}>{group}</b>
+              <div style={{ display: "grid", gap: "8px" }}>
+                {items.map(([key, label]) => (
+                  <div className="server-data-row" key={key} style={{ padding: "12px 14px", borderRadius: "9px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ flex:  1 }}>{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={events[key] !== false}
+                      disabled={settingsSaving || logs.enabled === false}
+                      onChange={e => updateEvent(key, e.target.checked)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {settingsError && <p style={{ color: "#ff7777", marginTop: "15px" }}>{settingsError}</p>}
+      {settingsMessage && <p style={{ color: "#73e6a2", marginTop: "15px" }}>{settingsMessage}</p>}
+
+      <div style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>
+        <button
+          className="primary"
+          disabled={settingsSaving}
+          onClick={() => onSave({
+            ...guildSettings,
+            logs: {
+              ...logs,
+              enabled: logs.enabled !== false,
+              channels: { ...channelsConfig },
+              events: { ...events }
+            }
+          }, true)}
+        >
+          {settingsSaving ? "Saving..." : "Save Log Settings"}
+        </button>
+        <span className="live" style={{ alignSelf: "center" }}>
+          {Object.values(channelsConfig).filter(Boolean).length} CHANNELS CONFIGURED
         </span>
       </div>
     </div>
@@ -2702,6 +3001,19 @@ export default function App() {
 
           {page === "Moderation" && (
             <ModerationView
+              selectedServer={selectedServer}
+              serverDetails={serverDetails}
+              guildSettings={guildSettings}
+              settingsLoading={settingsLoading}
+              settingsSaving={settingsSaving}
+              settingsError={settingsError}
+              settingsMessage={settingsMessage}
+              onSave={updateModerationSettings}
+            />
+          )}
+
+          {page === "Logs" && (
+            <LogsView
               selectedServer={selectedServer}
               serverDetails={serverDetails}
               guildSettings={guildSettings}
