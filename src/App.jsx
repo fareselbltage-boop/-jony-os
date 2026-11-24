@@ -1696,6 +1696,13 @@ function LogsView({
 
 export default function App() {
   const [page, setPage] = useState("Servers");
+  const [dashboardLanguage, setDashboardLanguage] = useState(() => {
+    try {
+      return localStorage.getItem("jony-dashboard-language") || "en";
+    } catch {
+      return "en";
+    }
+  });
   const [menu, setMenu] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -1729,6 +1736,15 @@ export default function App() {
   const [ticketImageLoading, setTicketImageLoading] = useState(false);
   const [ticketImageSaving, setTicketImageSaving] = useState(false);
   const [ticketImageError, setTicketImageError] = useState("");
+
+  useEffect(() => {
+    const isArabic = dashboardLanguage === "ar";
+    document.documentElement.lang = dashboardLanguage;
+    document.documentElement.dir = isArabic ? "rtl" : "ltr";
+    try {
+      localStorage.setItem("jony-dashboard-language", dashboardLanguage);
+    } catch {}
+  }, [dashboardLanguage]);
 
   const rolesPerPage = 8;
   const channelsPerPage = 8;
@@ -2402,6 +2418,92 @@ export default function App() {
 
   return (
     <div className="app">
+      <style>{`
+        .app input[type="checkbox"] {
+          appearance: none;
+          -webkit-appearance: none;
+          position: relative;
+          display: inline-block;
+          flex: 0 0 44px;
+          width: 44px;
+          min-width: 44px;
+          height: 25px;
+          margin: 0;
+          padding: 0;
+          border: 1px solid rgba(255,255,255,0.32);
+          border-radius: 999px;
+          background: #f4f4f5;
+          cursor: pointer;
+          transition: background .2s ease, border-color .2s ease;
+          vertical-align: middle;
+        }
+        .app input[type="checkbox"]::before {
+          content: "";
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 17px;
+          height: 17px;
+          border-radius: 50%;
+          background: #777;
+          transition: transform .2s ease, background .2s ease;
+        }
+        .app input[type="checkbox"]:checked {
+          background: #22c55e;
+          border-color: #22c55e;
+        }
+        .app input[type="checkbox"]:checked::before {
+          background: #fff;
+          transform: translateX(19px);
+        }
+        .app input[type="checkbox"]:disabled {
+          opacity: .55;
+          cursor: not-allowed;
+        }
+        .language-setting {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          flex-wrap: wrap;
+          padding: 16px;
+          margin-top: 15px;
+          border: 1px solid rgba(145,90,255,.2);
+          border-radius: 12px;
+          background: rgba(145,90,255,.06);
+        }
+        .language-setting-copy b { display: block; color: #f4efff; }
+        .language-setting-copy small { display: block; margin-top: 5px; color: #a99dbb; }
+        .language-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          border: 0;
+          background: transparent;
+          color: #eee7ff;
+          cursor: pointer;
+          font: inherit;
+        }
+        .language-toggle-track {
+          position: relative;
+          display: inline-block;
+          width: 48px;
+          height: 27px;
+          border-radius: 999px;
+          background: ${dashboardLanguage === "en" ? "#22c55e" : "#f4f4f5"};
+          transition: background .2s ease;
+        }
+        .language-toggle-knob {
+          position: absolute;
+          top: 3px;
+          left: ${dashboardLanguage === "en" ? "24px" : "3px"};
+          width: 21px;
+          height: 21px;
+          border-radius: 50%;
+          background: ${dashboardLanguage === "en" ? "#fff" : "#777"};
+          transition: left .2s ease;
+        }
+      `}</style>
       {menu && (
         <div
           className="scrim"
@@ -3059,6 +3161,25 @@ export default function App() {
                       <Settings />
                     </div>
 
+                    <div className="language-setting">
+                      <div className="language-setting-copy">
+                        <b>Dashboard Language</b>
+                        <small>Choose the dashboard display direction and saved language preference.</small>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="language-toggle"
+                        role="switch"
+                        aria-checked={dashboardLanguage === "en"}
+                        onClick={() => setDashboardLanguage(current => current === "en" ? "ar" : "en")}
+                      >
+                        <span>{dashboardLanguage === "en" ? "English" : "العربية"}</span>
+                        <span className="language-toggle-track">
+                          <span className="language-toggle-knob" />
+                        </span>
+                      </button>
+                    </div>
                   </section>
 
                   <section className="panel" style={{ marginTop: "18px" }}>
