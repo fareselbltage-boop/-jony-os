@@ -1840,8 +1840,17 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
 
-    fetch("/api/auth/me")
+    const timeout = setTimeout(() => controller.abort(), 9000);
+
+    fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal
+    })
       .then(async response => {
         if (!response.ok) return null;
         return response.json();
@@ -1851,13 +1860,20 @@ export default function App() {
           setUser(result.user);
         }
       })
-      .catch(() => {})
+      .catch(error => {
+        if (error.name !== "AbortError") {
+          console.error("[JONY OS] Authentication check failed:", error);
+        }
+      })
       .finally(() => {
+        clearTimeout(timeout);
         if (active) setAuthLoading(false);
       });
 
     return () => {
       active = false;
+      clearTimeout(timeout);
+      controller.abort();
     };
   }, []);
 
