@@ -1,4 +1,7 @@
 
+import getDatabase from "./db.js";
+import { createHash } from "node:crypto";
+
 const userGuildCache = new Map();
 const USER_GUILD_CACHE_TTL = 5 * 60 * 1000;
 
@@ -263,11 +266,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    const db = await getDatabase();
+    const authCache = db.collection("guild_authorization_cache");
+    const serverCache = db.collection("guild_server_cache");
     const guildsUrl = "https://discord.com/api/v10/users/@me/guilds";
 
-    const cachedUserGuilds = userToken
-      ? getCachedUserGuilds(userToken)
-      : null;
+    let cachedUserGuilds = userToken ? getCachedUserGuilds(userToken) : null;
+
+    if (!cachedUserGuilds && userToken) {
+      const tokenHash = createHash("sha256").update(userToken).digest("hex");
+      const stored = await authCache.findOne({ tokenHash, expiresAt: { $gt: new Date() } });
+      if (Array.isArray(stored?.guilds)) {
+        cachedUserGuilds = stored.guilds;
+        setCachedUserGuilds(userToken, cachedUserGuilds);
+      }
+    }
 
     let userGuildsResult = cachedUserGuilds
       ? {
@@ -324,6 +337,16 @@ export default async function handler(req, res) {
 
     if (!cachedUserGuilds) {
       setCachedUserGuilds(userToken, userGuildsResult.data);
+      const tokenHash = createHash("sha256").update(userToken).digest("hex");
+      await authCache.updateOne(
+        { tokenHash },
+        { $set: {
+          guilds: userGuildsResult.data,
+          expiresAt: new Date(Date.now() + USER_GUILD_CACHE_TTL),
+          updatedAt: new Date()
+        } },
+        { upsert: true }
+      );
     }
 
     const allowedGuild = userGuildsResult.data.find(guild => {
@@ -344,7 +367,18 @@ export default async function handler(req, res) {
       });
     }
 
-    const cachedServerData = getCachedServerData(guildId);
+    let cachedServerData = getCachedServerData(guildId);
+
+    if (!cachedServerData) {
+      const storedServer = await serverCache.findOne({
+        guildId,
+        expiresAt: { $gt: new Date() }
+      });
+      if (storedServer?.data) {
+        cachedServerData = storedServer.data;
+        setCachedServerData(guildId, cachedServerData);
+      }
+    }
 
     if (cachedServerData) {
       return res.status(200).json({
@@ -443,6 +477,15 @@ export default async function handler(req, res) {
     };
 
     setCachedServerData(guildId, serverData);
+    await serverCache.updateOne(
+      { guildId },
+      { $set: {
+        data: serverData,
+        expiresAt: new Date(Date.now() + SERVER_DATA_CACHE_TTL),
+        updatedAt: new Date()
+      } },
+      { upsert: true }
+    );
 
     return res.status(200).json({
       server: serverData
