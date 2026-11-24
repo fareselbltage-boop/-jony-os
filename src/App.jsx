@@ -1709,7 +1709,7 @@ export default function App() {
   const [query, setQuery] = useState("");
 
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [servers, setServers] = useState([]);
   const [serversLoading, setServersLoading] = useState(false);
