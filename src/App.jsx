@@ -1747,125 +1747,67 @@ export default function App() {
   }, [dashboardLanguage]);
 
   useEffect(() => {
-    if (dashboardLanguage !== "ar") return;
-
-    const dictionary = {
-      "Servers": "السيرفرات",
-      "Server Dashboard": "لوحة السيرفر",
-      "Systems": "الأنظمة",
-      "Moderation": "الإشراف",
-      "Tickets": "التذاكر",
-      "Ticket System": "نظام التذاكر",
-      "Welcome": "الترحيب",
-      "Logs": "السجلات",
-      "Economy": "الاقتصاد",
-      "Settings": "الإعدادات",
-      "Analytics": "الإحصائيات",
-      "PREFERENCES": "التفضيلات",
-      "OVERVIEW": "نظرة عامة",
-      "MANAGEMENT": "الإدارة",
-      "Select a server first": "اختر سيرفر أولاً",
-      "Choose a server to manage its settings.": "اختر سيرفر لإدارة إعداداته.",
-      "Choose a server before changing its systems.": "اختر سيرفر قبل تعديل أنظمته.",
-      "Choose Server": "اختيار سيرفر",
-      "Loading settings...": "جارٍ تحميل الإعدادات...",
-      "Loading systems...": "جارٍ تحميل الأنظمة...",
-      "Retrieving saved settings from MongoDB.": "جارٍ تحميل الإعدادات المحفوظة.",
-      "General Settings": "الإعدادات العامة",
-      "Configure the basic settings for this server.": "تحكم في الإعدادات الأساسية لهذا السيرفر.",
-      "Dashboard Language": "لغة لوحة التحكم",
-      "Choose the dashboard language.": "اختر لغة لوحة التحكم.",
-      "System Configuration": "إعدادات الأنظمة",
-      "Choose which bot systems should be enabled.": "اختر أنظمة البوت التي تريد تفعيلها.",
-      "Protect your community with moderation tools.": "احمِ مجتمعك باستخدام أدوات الإشراف.",
-      "Private support channels for your members.": "قنوات دعم خاصة بأعضاء السيرفر.",
-      "Custom greetings for new members.": "رسائل ترحيب مخصصة للأعضاء الجدد.",
-      "Automatically catch spam and unwanted links.": "اكتشف الرسائل المزعجة والروابط غير المرغوبة تلقائياً.",
-      "Reward members for being active.": "كافئ الأعضاء على نشاطهم.",
-      "Collect and vote on community ideas.": "اجمع أفكار المجتمع وصوّت عليها.",
-      "Enabled": "مفعّل",
-      "Disabled": "معطّل",
-      "Configure": "إعداد",
-      "Save Settings": "حفظ الإعدادات",
-      "Save Ticket Settings": "حفظ إعدادات التذاكر",
-      "Save Welcome Settings": "حفظ إعدادات الترحيب",
-      "Test Welcome": "تجربة الترحيب",
-      "Sending test...": "جارٍ إرسال التجربة...",
-      "Find a system...": "ابحث عن نظام...",
-      "Server roles": "رتب السيرفر",
-      "No roles available.": "لا توجد رتب متاحة.",
-      "No channels available.": "لا توجد قنوات متاحة.",
-      "Server channels": "قنوات السيرفر",
-      "ACTIVE": "نشط",
-      "ONLINE": "متصل",
-      "OFFLINE": "غير متصل",
-      "Save": "حفظ",
-      "Cancel": "إلغاء",
-      "Close": "إغلاق",
-      "Delete": "حذف",
-      "Refresh": "تحديث",
-      "Search": "بحث",
-      "Prefix": "البادئة",
-      "Commands": "الأوامر",
-      "Command": "الأمر",
-      "Channel": "القناة",
-      "Category": "التصنيف",
-      "Staff Role": "رتبة الطاقم",
-      "Log Channel": "قناة السجلات",
-      "Ticket Settings": "إعدادات التذاكر",
-      "Welcome Settings": "إعدادات الترحيب",
-      "Message": "الرسالة",
-      "Enabled systems": "الأنظمة المفعّلة",
-      "Total Members": "إجمالي الأعضاء",
-      "Members": "الأعضاء",
-      "Channels": "القنوات",
-      "Roles": "الرتب",
-      "Loading...": "جارٍ التحميل...",
-      "Saving...": "جارٍ الحفظ...",
-      "Save failed": "فشل الحفظ",
-      "Settings saved successfully.": "تم حفظ الإعدادات بنجاح."
-    };
-
-    const translateTree = root => {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const isArabic = dashboardLanguage === "ar";
+    document.documentElement.lang = isArabic ? "ar" : "en";
+    document.documentElement.dir = isArabic ? "rtl" : "ltr";
+    try { localStorage.setItem("jony-dashboard-language", dashboardLanguage); } catch {}
+    const dictionary = {"Servers":"السيرفرات","Server Dashboard":"لوحة السيرفر","Systems":"الأنظمة","Moderation":"الإشراف","Tickets":"التذاكر","Ticket System":"نظام التذاكر","Welcome":"الترحيب","Logs":"السجلات","Economy":"الاقتصاد","Settings":"الإعدادات","Analytics":"الإحصائيات","PREFERENCES":"التفضيلات","OVERVIEW":"نظرة عامة","MANAGEMENT":"الإدارة","SELECTED SERVER":"السيرفر المحدد","Server Overview":"نظرة عامة على السيرفر","Change Server":"تغيير السيرفر","Select a server first":"اختر سيرفر أولاً","Choose a server to manage its settings.":"اختر سيرفراً لإدارة إعداداته.","Choose a server before changing its systems.":"اختر سيرفراً قبل تعديل أنظمته.","Choose Server":"اختيار سيرفر","Loading settings...":"جارٍ تحميل الإعدادات...","Loading systems...":"جارٍ تحميل الأنظمة...","Retrieving saved settings from MongoDB.":"جارٍ تحميل الإعدادات المحفوظة.","General Settings":"الإعدادات العامة","Configure the basic settings for this server.":"اضبط الإعدادات الأساسية لهذا السيرفر.","Dashboard Language":"لغة لوحة التحكم","Choose the dashboard language.":"اختر لغة لوحة التحكم.","Choose the language you want to use across the dashboard.":"اختر اللغة التي تريد استخدامها في لوحة التحكم.","System Configuration":"إعدادات الأنظمة","Choose which bot systems should be enabled.":"اختر أنظمة البوت التي تريد تفعيلها.","Protect your community with moderation tools.":"احمِ مجتمعك باستخدام أدوات الإشراف.","Private support channels for your members.":"قنوات دعم خاصة لأعضاء السيرفر.","Custom greetings for new members.":"رسائل ترحيب مخصصة للأعضاء الجدد.","Automatically catch spam and unwanted links.":"اكتشف الرسائل المزعجة والروابط غير المرغوبة تلقائياً.","Reward members for being active.":"كافئ الأعضاء على نشاطهم.","Collect and vote on community ideas.":"اجمع أفكار المجتمع وصوّت عليها.","Enabled":"مفعّل","Disabled":"معطّل","Configure":"إعداد","Save Settings":"حفظ الإعدادات","Save Ticket Settings":"حفظ إعدادات التذاكر","Save Welcome Settings":"حفظ إعدادات الترحيب","Save Log Settings":"حفظ إعدادات السجلات","Test Welcome":"تجربة الترحيب","Sending test...":"جارٍ إرسال التجربة...","Find a system...":"ابحث عن نظام...","Server roles":"رتب السيرفر","No roles available.":"لا توجد رتب متاحة.","No channels available.":"لا توجد قنوات متاحة.","Server channels":"قنوات السيرفر","ACTIVE":"نشط","ONLINE":"متصل","OFFLINE":"غير متصل","Save":"حفظ","Cancel":"إلغاء","Close":"إغلاق","Delete":"حذف","Refresh":"تحديث","Search":"بحث","Prefix":"البادئة","Commands":"الأوامر","Command":"الأمر","Channel":"القناة","Category":"التصنيف","Staff Role":"رتبة الطاقم","Log Channel":"قناة السجلات","Ticket Settings":"إعدادات التذاكر","Welcome Settings":"إعدادات الترحيب","Message":"الرسالة","Enabled systems":"الأنظمة المفعّلة","Total Members":"إجمالي الأعضاء","Members":"الأعضاء","Channels":"القنوات","Roles":"الرتب","Loading...":"جارٍ التحميل...","Saving...":"جارٍ الحفظ...","Save failed":"فشل الحفظ","Settings saved successfully.":"تم حفظ الإعدادات بنجاح.","Loading your connected servers...":"جارٍ تحميل السيرفرات المتصلة...","Connecting to Discord and checking your server access.":"جارٍ الاتصال بديسكورد والتحقق من صلاحياتك.","Couldn't load your servers":"تعذّر تحميل السيرفرات","No connected servers found":"لم يتم العثور على سيرفرات متصلة متاحة","Make sure you're the server owner or have Administrator permission in at least one Discord server.":"ستظهر هنا السيرفرات التي أُضيف إليها JONY OS ولديك فيها صلاحية Administrator.","Refresh servers":"تحديث السيرفرات","BOT CONNECTED":"البوت متصل","BOT NOT ADDED":"البوت غير مضاف","Owner":"المالك","Administrator":"مسؤول","Manage Server":"إدارة السيرفر","Invite JONY OS":"إضافة JONY OS","Loading server dashboard...":"جارٍ تحميل لوحة السيرفر...","Retrieving server information from Discord.":"جارٍ جلب معلومات السيرفر من ديسكورد.","Unable to open this server":"تعذّر فتح هذا السيرفر","Back to servers":"العودة إلى السيرفرات","Try again":"حاول مرة أخرى","Load Analytics":"تحميل الإحصائيات","Analytics unavailable":"الإحصائيات غير متاحة","No analytics data":"لا توجد بيانات إحصائية","Refresh the analytics to retrieve the current server data.":"حدّث الإحصائيات لجلب بيانات السيرفر الحالية.","Moderation Settings":"إعدادات الإشراف","Ticket System Settings":"إعدادات نظام التذاكر","Welcome System":"نظام الترحيب","Activity Logs":"سجلات النشاط","Server Information":"معلومات السيرفر","Server Name":"اسم السيرفر","Server ID":"معرّف السيرفر","Member Count":"عدد الأعضاء","Text Channels":"القنوات النصية","Voice Channels":"القنوات الصوتية","Default Timeout":"مدة الإسكات الافتراضية","Success Message":"رسالة النجاح","Permission Message":"رسالة الصلاحيات","Enable system":"تفعيل النظام","Disable system":"تعطيل النظام","Command Settings":"إعدادات الأوامر","Command Prefix":"بادئة الأوامر","Aliases":"الأسماء البديلة","Add":"إضافة","Remove":"إزالة","Rename":"إعادة التسمية","Close Ticket":"إغلاق التذكرة","Delete Ticket":"حذف التذكرة","Welcome Channel":"قناة الترحيب","Welcome Message":"رسالة الترحيب","Embed Title":"عنوان التضمين","Embed Color":"لون التضمين","Show Avatar":"إظهار الصورة الشخصية","Use Embed":"استخدام Embed","Upload Image":"رفع صورة","Choose Image":"اختيار صورة","Save Image":"حفظ الصورة","Image uploaded successfully.":"تم رفع الصورة بنجاح.","Image must be 2 MB or smaller.":"يجب ألا يتجاوز حجم الصورة 2 ميجابايت.","Log Settings":"إعدادات السجلات","Log Events":"أحداث السجلات","Message Delete":"حذف الرسائل","Message Edit":"تعديل الرسائل","Member Join":"انضمام عضو","Member Leave":"مغادرة عضو","Member Update":"تحديث العضو","Role Create":"إنشاء رتبة","Role Update":"تحديث رتبة","Role Delete":"حذف رتبة","Channel Create":"إنشاء قناة","Channel Update":"تحديث قناة","Channel Delete":"حذف قناة","Voice Join":"دخول صوتي","Voice Leave":"مغادرة صوتية","Voice Move":"الانتقال الصوتي","No servers found":"لم يتم العثور على سيرفرات","Search servers...":"ابحث عن سيرفرات...","Search channels...":"ابحث عن قنوات...","Search roles...":"ابحث عن رتب...","Last 7 days":"آخر 7 أيام","Today":"اليوم","Yesterday":"أمس","This week":"هذا الأسبوع","This month":"هذا الشهر","Welcome back!":"مرحباً بعودتك!","Dashboard":"لوحة التحكم","Home":"الرئيسية","Overview":"نظرة عامة","Profile":"الملف الشخصي","Logout":"تسجيل الخروج","Log out":"تسجيل الخروج","Login with Discord":"تسجيل الدخول عبر Discord","Continue with Discord":"المتابعة عبر Discord","Could not load servers":"تعذّر تحميل السيرفرات","Could not load settings":"تعذّر تحميل الإعدادات","Something went wrong":"حدث خطأ ما","Please try again later.":"يرجى المحاولة مرة أخرى لاحقاً.","No data available":"لا توجد بيانات متاحة","Not configured":"غير مُعدّ","Configured":"تم الإعداد","Enabled events":"الأحداث المفعّلة","CHANNELS CONFIGURED":"قنوات تم إعدادها"};
+    const originals = new WeakMap();
+    const root = document.querySelector(".app") || document.body;
+    let translating = false;
+    const translateTree = target => {
+      if (!target || translating) return;
+      translating = true;
+      const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
       const nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
-
       for (const node of nodes) {
-        const raw = node.nodeValue;
-        const trimmed = raw.trim();
-        if (!trimmed || !dictionary[trimmed]) continue;
-        node.nodeValue = raw.replace(trimmed, dictionary[trimmed]);
+        if (!originals.has(node)) originals.set(node, node.nodeValue);
+        const original = originals.get(node);
+        const trimmed = original.trim();
+        if (!trimmed) continue;
+        const translated = isArabic ? dictionary[trimmed] : original;
+        if (translated !== undefined) node.nodeValue = original.replace(trimmed, translated);
       }
-
-      root.querySelectorAll?.("input[placeholder],textarea[placeholder],button[aria-label]").forEach(element => {
-        for (const attribute of ["placeholder", "aria-label"]) {
-          const value = element.getAttribute(attribute);
-          if (value && dictionary[value]) element.setAttribute(attribute, dictionary[value]);
+      const elements = target.nodeType === Node.ELEMENT_NODE ? [target, ...target.querySelectorAll("*")] : [...(target.querySelectorAll?.("*") || [])];
+      for (const element of elements) {
+        for (const attribute of ["placeholder", "aria-label", "title"]) {
+          const originalKey = "data-jony-original-" + attribute;
+          if (!element.hasAttribute(originalKey) && element.hasAttribute(attribute)) element.setAttribute(originalKey, element.getAttribute(attribute));
+          const original = element.getAttribute(originalKey);
+          if (original !== null) {
+            const translated = isArabic ? dictionary[original] : original;
+            if (translated !== undefined) element.setAttribute(attribute, translated);
+          }
         }
-      });
+      }
+      translating = false;
     };
-
-    translateTree(document.querySelector(".app") || document.body);
+    translateTree(root);
     const observer = new MutationObserver(records => {
+      if (translating) return;
       for (const record of records) {
-        if (record.type === "characterData" && record.target.parentElement) {
-          translateTree(record.target.parentElement);
+        if (record.type === "characterData") {
+          const node = record.target;
+          if (!originals.has(node)) originals.set(node, node.nodeValue);
+          const original = originals.get(node);
+          const trimmed = original.trim();
+          const translated = isArabic ? dictionary[trimmed] : original;
+          if (trimmed && translated !== undefined) { translating = true; node.nodeValue = original.replace(trimmed, translated); translating = false; }
         }
         for (const node of record.addedNodes || []) {
           if (node.nodeType === Node.ELEMENT_NODE) translateTree(node);
-          else if (node.nodeType === Node.TEXT_NODE && dictionary[node.nodeValue.trim()]) {
-            const trimmed = node.nodeValue.trim();
-            node.nodeValue = node.nodeValue.replace(trimmed, dictionary[trimmed]);
+          else if (node.nodeType === Node.TEXT_NODE) {
+            originals.set(node, node.nodeValue);
+            const original = node.nodeValue;
+            const trimmed = original.trim();
+            const translated = isArabic ? dictionary[trimmed] : original;
+            if (trimmed && translated !== undefined) { translating = true; node.nodeValue = original.replace(trimmed, translated); translating = false; }
           }
         }
       }
     });
-    observer.observe(document.querySelector(".app") || document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
   }, [dashboardLanguage]);
 
@@ -2893,15 +2835,11 @@ export default function App() {
 
                         <span
                           className={
-                            server.isBotAdded
-                              ? "bot-badge added"
-                              : "bot-badge missing"
+                            "bot-badge added"
                           }
                         >
                           <span />
-                          {server.isBotAdded
-                            ? "BOT CONNECTED"
-                            : "BOT NOT ADDED"}
+                          "BOT CONNECTED"
                         </span>
                       </div>
 
@@ -2924,7 +2862,7 @@ export default function App() {
                         </span>
                       </div>
 
-                      {server.isBotAdded ? (
+                      {true ? (
                         <button
                           className="server-manage"
                           onClick={() => openServer(server)}
