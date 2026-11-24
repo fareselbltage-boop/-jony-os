@@ -1,4 +1,10 @@
 
+import getDatabase from "./db.js";
+import { createHash } from "node:crypto";
+
+const SERVER_LIST_TTL = 5 * 60 * 1000;
+const SERVER_LIST_STALE_TTL = 10 * 60 * 1000;
+
 function getCookies(header = "") {
   const cookies = {};
 
@@ -272,6 +278,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    const db = await getDatabase();
+    const serverListCache = db.collection("user_server_list_cache");
+    const cacheIdentity = refreshToken || userToken;
+    const cacheKey = createHash("sha256").update(cacheIdentity).digest("hex");
+    const cachedList = await serverListCache.findOne({ cacheKey });
+    const now = Date.now();
+
+    if (cachedList?.servers && cachedList.expiresAt && new Date(cachedList.expiresAt).getTime() > now) {
+      return res.status(200).json({
+        servers: cachedList.servers,
+        total: cachedList.servers.length,
+        cached: true
+      });
+    }
+
     const guildsUrl =
       "https://discord.com/api/v10/users/@me/guilds?with_counts=true";
 
@@ -314,8 +335,18 @@ export default async function handler(req, res) {
 
     if (!discordResult.ok) {
       if (discordResult.status === 429) {
-        return res.status(503).json({
-          error: "Discord is temporarily busy. Your server list is cached for a few minutes; please retry shortly."
+        if (cachedList?.servers && cachedList.updatedAt && now - new Date(cachedList.updatedAt).getTime() <= SERVER_LIST_STALE_TTL) {
+          return res.status(200).json({
+            servers: cachedList.servers,
+            total: cachedList.servers.length,
+            cached: true,
+            stale: true,
+            retryAfter: discordResult.retryAfter || 5
+          });
+        }
+        return res.status(429).json({
+          error: "Discord rate limit reached. Your previous server list is not available yet; please wait and retry.",
+          retryAfter: discordResult.retryAfter || 5
         });
       }
       return sendDiscordError(
@@ -393,9 +424,20 @@ export default async function handler(req, res) {
       servers.push(...results.filter(item => item && item.isBotAdded));
     }
 
+    await serverListCache.updateOne(
+      { cacheKey },
+      { $set: {
+        servers,
+        updatedAt: new Date(),
+        expiresAt: new Date(Date.now() + SERVER_LIST_TTL)
+      } },
+      { upsert: true }
+    );
+
     return res.status(200).json({
       servers,
-      total: servers.length
+      total: servers.length,
+      cached: false
     });
   } catch (error) {
     console.error("Servers API error:", error);
