@@ -149,6 +149,27 @@ function sendDiscordError(res, result, fallback) {
   });
 }
 
+const userGuildCache = new Map();
+const USER_GUILD_CACHE_TIME = 5 * 60 * 1000;
+
+function getCachedUserGuilds(token) {
+  const cached = userGuildCache.get(token);
+  if (!cached) return null;
+  if (Date.now() - cached.time > USER_GUILD_CACHE_TIME) {
+    userGuildCache.delete(token);
+    return null;
+  }
+  return cached.guilds;
+}
+
+function setCachedUserGuilds(token, guilds) {
+  if (userGuildCache.size >= 100) {
+    const oldest = userGuildCache.keys().next().value;
+    if (oldest) userGuildCache.delete(oldest);
+  }
+  userGuildCache.set(token, { time: Date.now(), guilds });
+}
+
 const botStatusCache = new Map();
 const BOT_CACHE_TIME = 10 * 60 * 1000;
 
@@ -254,11 +275,15 @@ export default async function handler(req, res) {
     const guildsUrl =
       "https://discord.com/api/v10/users/@me/guilds?with_counts=true";
 
-    let discordResult = userToken
-      ? await fetchDiscord(guildsUrl, {
-          Authorization: `Bearer ${userToken}`
-        })
-      : null;
+    const cachedUserGuilds = userToken ? getCachedUserGuilds(userToken) : null;
+
+    let discordResult = cachedUserGuilds
+      ? { ok: true, status: 200, data: cachedUserGuilds, cached: true }
+      : userToken
+        ? await fetchDiscord(guildsUrl, {
+            Authorization: `Bearer ${userToken}`
+          })
+        : null;
 
     if (!discordResult || discordResult.status === 401) {
       if (!refreshToken) {
@@ -288,6 +313,11 @@ export default async function handler(req, res) {
     }
 
     if (!discordResult.ok) {
+      if (discordResult.status === 429) {
+        return res.status(503).json({
+          error: "Discord is temporarily busy. Your server list is cached for a few minutes; please retry shortly."
+        });
+      }
       return sendDiscordError(
         res,
         discordResult,
@@ -299,6 +329,10 @@ export default async function handler(req, res) {
       return res.status(502).json({
         error: "Invalid Discord server response"
       });
+    }
+
+    if (userToken && !cachedUserGuilds) {
+      setCachedUserGuilds(userToken, discordResult.data);
     }
 
     const adminGuilds = discordResult.data.filter(guild => {
