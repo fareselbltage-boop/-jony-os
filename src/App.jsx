@@ -1768,7 +1768,10 @@ export default function App() {
         const trimmed = original.trim();
         if (!trimmed) continue;
         const translated = isArabic ? dictionary[trimmed] : original;
-        if (translated !== undefined) node.nodeValue = original.replace(trimmed, translated);
+        if (translated !== undefined) {
+          const nextValue = original.replace(trimmed, translated);
+          if (node.nodeValue !== nextValue) node.nodeValue = nextValue;
+        }
       }
       const elements = target.nodeType === Node.ELEMENT_NODE ? [target, ...target.querySelectorAll("*")] : [...(target.querySelectorAll?.("*") || [])];
       for (const element of elements) {
@@ -1794,7 +1797,14 @@ export default function App() {
           const original = translationOriginals.get(node);
           const trimmed = original.trim();
           const translated = isArabic ? dictionary[trimmed] : original;
-          if (trimmed && translated !== undefined) { translating = true; node.nodeValue = original.replace(trimmed, translated); translating = false; }
+          if (trimmed && translated !== undefined) {
+            const nextValue = original.replace(trimmed, translated);
+            if (node.nodeValue !== nextValue) {
+              translating = true;
+              node.nodeValue = nextValue;
+              translating = false;
+            }
+          }
         }
         for (const node of record.addedNodes || []) {
           if (node.nodeType === Node.ELEMENT_NODE) translateTree(node);
@@ -1803,7 +1813,14 @@ export default function App() {
             const original = node.nodeValue;
             const trimmed = original.trim();
             const translated = isArabic ? dictionary[trimmed] : original;
-            if (trimmed && translated !== undefined) { translating = true; node.nodeValue = original.replace(trimmed, translated); translating = false; }
+            if (trimmed && translated !== undefined) {
+            const nextValue = original.replace(trimmed, translated);
+            if (node.nodeValue !== nextValue) {
+              translating = true;
+              node.nodeValue = nextValue;
+              translating = false;
+            }
+          }
           }
         }
       }
