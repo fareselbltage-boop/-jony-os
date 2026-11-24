@@ -150,7 +150,7 @@ function sendDiscordError(res, result, fallback) {
 }
 
 const botStatusCache = new Map();
-const BOT_CACHE_TIME = 60 * 1000;
+const BOT_CACHE_TIME = 10 * 60 * 1000;
 
 async function checkBotInGuild(guildId, botToken) {
   const cached = botStatusCache.get(guildId);
@@ -325,13 +325,8 @@ export default async function handler(req, res) {
           );
 
           if (!botStatus.ok) {
-            return {
-              guildId: guild.id,
-              error: true,
-              status: botStatus.status,
-              retryAfter: botStatus.retryAfter,
-              message: botStatus.message
-            };
+            // Skip a temporarily unavailable check instead of failing the whole server list.
+            return null;
           }
 
           const inviteParams = new URLSearchParams({
@@ -359,22 +354,9 @@ export default async function handler(req, res) {
         })
       );
 
-      const failed = results.find(item => item.error);
-
-      if (failed) {
-        if (failed.status === 429) {
-          return res.status(429).json({
-            error: "Discord is rate limiting requests. Please wait and try again.",
-            retryAfter: failed.retryAfter || 1
-          });
-        }
-
-        return res.status(502).json({
-          error: "Could not check whether the bot is in every server."
-        });
-      }
-
-      servers.push(...results);
+      // The dashboard only lists servers where the bot is already installed.
+      // A temporary 429 for one guild must not break the entire dashboard.
+      servers.push(...results.filter(item => item && item.isBotAdded));
     }
 
     return res.status(200).json({
