@@ -394,8 +394,8 @@ const defaultSettings = {
     staffRoleId: "",
     logChannelId: "",
     defaultTimeout: 10,
-    successMessage: "Moderation action completed.",
-    permissionMessage: "You do not have permission to use this command.",
+    successMessage: "تم تنفيذ إجراء الإشراف بنجاح.",
+    permissionMessage: "ليس لديك صلاحية لاستخدام هذا الأمر.",
     commands: {
       ban: { enabled: true },
       kick: { enabled: true },
