@@ -2,7 +2,7 @@
 import getDatabase from "./db.js";
 
 const guildAuthorizationCache = new Map();
-const GUILD_AUTH_CACHE_TTL = 60 * 1000;
+const GUILD_AUTH_CACHE_TTL = 5 * 60 * 1000;
 
 function getRetryAfter(response, data) {
   const headerValue = Number(response.headers.get("retry-after"));
