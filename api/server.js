@@ -1,9 +1,9 @@
 
 const userGuildCache = new Map();
-const USER_GUILD_CACHE_TTL = 60 * 1000;
+const USER_GUILD_CACHE_TTL = 5 * 60 * 1000;
 
 const serverDataCache = new Map();
-const SERVER_DATA_CACHE_TTL = 30 * 1000;
+const SERVER_DATA_CACHE_TTL = 5 * 60 * 1000;
 
 function getCachedUserGuilds(userToken) {
   const cached = userGuildCache.get(userToken);
