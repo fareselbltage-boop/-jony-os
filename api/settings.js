@@ -1,5 +1,6 @@
 
 import getDatabase from "./db.js";
+import { createHash } from "node:crypto";
 
 const guildAuthorizationCache = new Map();
 const GUILD_AUTH_CACHE_TTL = 5 * 60 * 1000;
@@ -152,7 +153,8 @@ async function fetchDiscord(url, headers) {
     return {
       ok: response.ok,
       status: response.status,
-      data
+      data,
+      retryAfter: response.status === 429 ? getRetryAfter(response, data) : null
     };
   } catch (error) {
     console.error("Discord request failed:", error.message);
@@ -189,8 +191,23 @@ async function authorizeGuild(req, res, guildId) {
 
   const guildsUrl = "https://discord.com/api/v10/users/@me/guilds";
 
+  const db = await getDatabase();
+  const authorizationCache = db.collection("guild_authorization_cache");
   let result = null;
   let cachedGuilds = userToken ? getCachedGuilds(userToken) : null;
+
+  if (!cachedGuilds && userToken) {
+    const tokenHash = createHash("sha256").update(userToken).digest("hex");
+    const persistentCache = await authorizationCache.findOne({
+      tokenHash,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (Array.isArray(persistentCache?.guilds)) {
+      cachedGuilds = persistentCache.guilds;
+      setCachedGuilds(userToken, cachedGuilds);
+    }
+  }
 
   if (cachedGuilds) {
     result = {
@@ -278,6 +295,19 @@ async function authorizeGuild(req, res, guildId) {
 
   if (!cachedGuilds) {
     setCachedGuilds(userToken, result.data);
+
+    const tokenHash = createHash("sha256").update(userToken).digest("hex");
+    await authorizationCache.updateOne(
+      { tokenHash },
+      {
+        $set: {
+          guilds: result.data,
+          expiresAt: new Date(Date.now() + GUILD_AUTH_CACHE_TTL),
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
   }
 
   const guild = result.data.find(item => item.id === guildId);
