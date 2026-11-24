@@ -1746,6 +1746,129 @@ export default function App() {
     } catch {}
   }, [dashboardLanguage]);
 
+  useEffect(() => {
+    if (dashboardLanguage !== "ar") return;
+
+    const dictionary = {
+      "Servers": "السيرفرات",
+      "Server Dashboard": "لوحة السيرفر",
+      "Systems": "الأنظمة",
+      "Moderation": "الإشراف",
+      "Tickets": "التذاكر",
+      "Ticket System": "نظام التذاكر",
+      "Welcome": "الترحيب",
+      "Logs": "السجلات",
+      "Economy": "الاقتصاد",
+      "Settings": "الإعدادات",
+      "Analytics": "الإحصائيات",
+      "PREFERENCES": "التفضيلات",
+      "OVERVIEW": "نظرة عامة",
+      "MANAGEMENT": "الإدارة",
+      "Select a server first": "اختر سيرفر أولاً",
+      "Choose a server to manage its settings.": "اختر سيرفر لإدارة إعداداته.",
+      "Choose a server before changing its systems.": "اختر سيرفر قبل تعديل أنظمته.",
+      "Choose Server": "اختيار سيرفر",
+      "Loading settings...": "جارٍ تحميل الإعدادات...",
+      "Loading systems...": "جارٍ تحميل الأنظمة...",
+      "Retrieving saved settings from MongoDB.": "جارٍ تحميل الإعدادات المحفوظة.",
+      "General Settings": "الإعدادات العامة",
+      "Configure the basic settings for this server.": "تحكم في الإعدادات الأساسية لهذا السيرفر.",
+      "Dashboard Language": "لغة لوحة التحكم",
+      "Choose the dashboard language.": "اختر لغة لوحة التحكم.",
+      "System Configuration": "إعدادات الأنظمة",
+      "Choose which bot systems should be enabled.": "اختر أنظمة البوت التي تريد تفعيلها.",
+      "Protect your community with moderation tools.": "احمِ مجتمعك باستخدام أدوات الإشراف.",
+      "Private support channels for your members.": "قنوات دعم خاصة بأعضاء السيرفر.",
+      "Custom greetings for new members.": "رسائل ترحيب مخصصة للأعضاء الجدد.",
+      "Automatically catch spam and unwanted links.": "اكتشف الرسائل المزعجة والروابط غير المرغوبة تلقائياً.",
+      "Reward members for being active.": "كافئ الأعضاء على نشاطهم.",
+      "Collect and vote on community ideas.": "اجمع أفكار المجتمع وصوّت عليها.",
+      "Enabled": "مفعّل",
+      "Disabled": "معطّل",
+      "Configure": "إعداد",
+      "Save Settings": "حفظ الإعدادات",
+      "Save Ticket Settings": "حفظ إعدادات التذاكر",
+      "Save Welcome Settings": "حفظ إعدادات الترحيب",
+      "Test Welcome": "تجربة الترحيب",
+      "Sending test...": "جارٍ إرسال التجربة...",
+      "Find a system...": "ابحث عن نظام...",
+      "Server roles": "رتب السيرفر",
+      "No roles available.": "لا توجد رتب متاحة.",
+      "No channels available.": "لا توجد قنوات متاحة.",
+      "Server channels": "قنوات السيرفر",
+      "ACTIVE": "نشط",
+      "ONLINE": "متصل",
+      "OFFLINE": "غير متصل",
+      "Save": "حفظ",
+      "Cancel": "إلغاء",
+      "Close": "إغلاق",
+      "Delete": "حذف",
+      "Refresh": "تحديث",
+      "Search": "بحث",
+      "Prefix": "البادئة",
+      "Commands": "الأوامر",
+      "Command": "الأمر",
+      "Channel": "القناة",
+      "Category": "التصنيف",
+      "Staff Role": "رتبة الطاقم",
+      "Log Channel": "قناة السجلات",
+      "Ticket Settings": "إعدادات التذاكر",
+      "Welcome Settings": "إعدادات الترحيب",
+      "Message": "الرسالة",
+      "Enabled systems": "الأنظمة المفعّلة",
+      "Total Members": "إجمالي الأعضاء",
+      "Members": "الأعضاء",
+      "Channels": "القنوات",
+      "Roles": "الرتب",
+      "Loading...": "جارٍ التحميل...",
+      "Saving...": "جارٍ الحفظ...",
+      "Save failed": "فشل الحفظ",
+      "Settings saved successfully.": "تم حفظ الإعدادات بنجاح."
+    };
+
+    const translateTree = root => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+
+      for (const node of nodes) {
+        const raw = node.nodeValue;
+        const trimmed = raw.trim();
+        if (!trimmed || !dictionary[trimmed]) continue;
+        node.nodeValue = raw.replace(trimmed, dictionary[trimmed]);
+      }
+
+      root.querySelectorAll?.("input[placeholder],textarea[placeholder],button[aria-label]").forEach(element => {
+        for (const attribute of ["placeholder", "aria-label"]) {
+          const value = element.getAttribute(attribute);
+          if (value && dictionary[value]) element.setAttribute(attribute, dictionary[value]);
+        }
+      });
+    };
+
+    translateTree(document.querySelector(".app") || document.body);
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === "characterData" && record.target.parentElement) {
+          translateTree(record.target.parentElement);
+        }
+        for (const node of record.addedNodes || []) {
+          if (node.nodeType === Node.ELEMENT_NODE) translateTree(node);
+          else if (node.nodeType === Node.TEXT_NODE && dictionary[node.nodeValue.trim()]) {
+            const trimmed = node.nodeValue.trim();
+            node.nodeValue = node.nodeValue.replace(trimmed, dictionary[trimmed]);
+          }
+        }
+      }
+    });
+    observer.observe(document.querySelector(".app") || document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    return () => observer.disconnect();
+  }, [dashboardLanguage]);
+
   const rolesPerPage = 8;
   const channelsPerPage = 8;
 
@@ -2474,7 +2597,7 @@ export default function App() {
         }
         .language-setting-copy b { display: block; color: #f4efff; }
         .language-setting-copy small { display: block; margin-top: 5px; color: #a99dbb; }
-        .language-toggle {
+        .language-select { min-width: 150px; font-size: 12px; cursor: pointer; }\n        .language-toggle {
           display: inline-flex;
           align-items: center;
           gap: 10px;
@@ -3163,22 +3286,19 @@ export default function App() {
 
                     <div className="language-setting">
                       <div className="language-setting-copy">
-                        <b>Dashboard Language</b>
-                        <small>Choose the dashboard display direction and saved language preference.</small>
+                        <b>{dashboardLanguage === "ar" ? "لغة لوحة التحكم" : "Dashboard Language"}</b>
+                        <small>{dashboardLanguage === "ar" ? "اختر اللغة التي تريد استخدامها في لوحة التحكم." : "Choose the language you want to use across the dashboard."}</small>
                       </div>
 
-                      <button
-                        type="button"
-                        className="language-toggle"
-                        role="switch"
-                        aria-checked={dashboardLanguage === "en"}
-                        onClick={() => setDashboardLanguage(current => current === "en" ? "ar" : "en")}
+                      <select
+                        className="select language-select"
+                        value={dashboardLanguage}
+                        onChange={event => setDashboardLanguage(event.target.value)}
+                        aria-label="Dashboard language"
                       >
-                        <span>{dashboardLanguage === "en" ? "English" : "العربية"}</span>
-                        <span className="language-toggle-track">
-                          <span className="language-toggle-knob" />
-                        </span>
-                      </button>
+                        <option value="en">English</option>
+                        <option value="ar">العربية</option>
+                      </select>
                     </div>
                   </section>
 
