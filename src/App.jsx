@@ -72,8 +72,8 @@ const DEFAULT_SETTINGS = {
     staffRoleId: "",
     logChannelId: "",
     defaultTimeout: 10,
-    successMessage: "Moderation action completed.",
-    permissionMessage: "You do not have permission to use this command.",
+    successMessage: "تم تنفيذ إجراء الإشراف بنجاح.",
+    permissionMessage: "ليس لديك صلاحية لاستخدام هذا الأمر.",
     commands: {
       ban: { enabled: true },
       kick: { enabled: true },
@@ -97,14 +97,14 @@ const DEFAULT_SETTINGS = {
     },
     come: {
       enabled: true,
-      message: "Hello {user}! A staff member needs you in your ticket: {ticket}"
+      message: "مرحباً {user}! أحد أعضاء الطاقم يحتاجك في تذكرتك: {ticket}"
     }
   },
   welcome: {
     channelId: "",
-    message: "Welcome {user} to {server}!",
+    message: "مرحباً {user} في {server}!",
     useEmbed: true,
-    embedTitle: "Welcome to {server}!",
+    embedTitle: "مرحباً بك في {server}!",
     embedColor: "#8b5cf6",
     showAvatar: true
   },
