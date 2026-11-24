@@ -1842,6 +1842,11 @@ export default function App() {
     let active = true;
     const controller = new AbortController();
 
+    // Never keep the whole dashboard blocked by a slow Discord auth check.
+    const fallbackTimeout = setTimeout(() => {
+      if (active) setAuthLoading(false);
+    }, 4000);
+
     const timeout = setTimeout(() => controller.abort(), 9000);
 
     fetch("/api/auth/me", {
@@ -1867,12 +1872,14 @@ export default function App() {
       })
       .finally(() => {
         clearTimeout(timeout);
+        clearTimeout(fallbackTimeout);
         if (active) setAuthLoading(false);
       });
 
     return () => {
       active = false;
       clearTimeout(timeout);
+      clearTimeout(fallbackTimeout);
       controller.abort();
     };
   }, []);
