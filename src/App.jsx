@@ -1709,7 +1709,7 @@ export default function App() {
   const [query, setQuery] = useState("");
 
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [servers, setServers] = useState([]);
   const [serversLoading, setServersLoading] = useState(false);
@@ -1859,20 +1859,7 @@ export default function App() {
     let active = true;
     const controller = new AbortController();
 
-    // Never keep the whole dashboard blocked by a slow Discord auth check.
-    const fallbackTimeout = setTimeout(() => {
-      if (active) setAuthLoading(false);
-    }, 4000);
-
-    const timeout = setTimeout(() => controller.abort(), 9000);
-
-    fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      signal: controller.signal
-    })
+    fetch("/api/auth/me")
       .then(async response => {
         if (!response.ok) return null;
         return response.json();
@@ -1882,22 +1869,13 @@ export default function App() {
           setUser(result.user);
         }
       })
-      .catch(error => {
-        if (error.name !== "AbortError") {
-          console.error("[JONY OS] Authentication check failed:", error);
-        }
-      })
+      .catch(() => {})
       .finally(() => {
-        clearTimeout(timeout);
-        clearTimeout(fallbackTimeout);
         if (active) setAuthLoading(false);
       });
 
     return () => {
       active = false;
-      clearTimeout(timeout);
-      clearTimeout(fallbackTimeout);
-      controller.abort();
     };
   }, []);
 
