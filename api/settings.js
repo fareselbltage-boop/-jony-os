@@ -3,7 +3,8 @@ import getDatabase from "./db.js";
 import { createHash } from "node:crypto";
 
 const guildAuthorizationCache = new Map();
-const GUILD_AUTH_CACHE_TTL = 5 * 60 * 1000;
+const GUILD_AUTH_CACHE_TTL = 15 * 60 * 1000;
+const GUILD_AUTH_STALE_TTL = 60 * 60 * 1000;
 
 function getRetryAfter(response, data) {
   const headerValue = Number(response.headers.get("retry-after"));
@@ -198,12 +199,15 @@ async function authorizeGuild(req, res, guildId) {
 
   if (!cachedGuilds && userToken) {
     const tokenHash = createHash("sha256").update(userToken).digest("hex");
-    const persistentCache = await authorizationCache.findOne({
-      tokenHash,
-      expiresAt: { $gt: new Date() }
-    });
+    const persistentCache = await authorizationCache.findOne({ tokenHash });
+    const cacheAge = persistentCache?.updatedAt
+      ? Date.now() - new Date(persistentCache.updatedAt).getTime()
+      : Infinity;
 
-    if (Array.isArray(persistentCache?.guilds)) {
+    if (
+      Array.isArray(persistentCache?.guilds) &&
+      cacheAge <= GUILD_AUTH_CACHE_TTL
+    ) {
       cachedGuilds = persistentCache.guilds;
       setCachedGuilds(userToken, cachedGuilds);
     }
@@ -255,12 +259,30 @@ async function authorizeGuild(req, res, guildId) {
 
   if (!result.ok) {
     if (result.status === 429) {
-      return {
-        error: "Discord is rate limiting requests. Please wait and try again.",
-        status: 429,
-        retryAfter: result.retryAfter || 1
-      };
+      const tokenHash = userToken
+        ? createHash("sha256").update(userToken).digest("hex")
+        : null;
+      const staleCache = tokenHash
+        ? await authorizationCache.findOne({ tokenHash })
+        : null;
+      const staleAge = staleCache?.updatedAt
+        ? Date.now() - new Date(staleCache.updatedAt).getTime()
+        : Infinity;
+
+      if (Array.isArray(staleCache?.guilds) && staleAge <= GUILD_AUTH_STALE_TTL) {
+        result = { ok: true, status: 200, data: staleCache.guilds };
+        cachedGuilds = staleCache.guilds;
+      } else {
+        return {
+          error: "Discord is rate limiting requests. Please wait and try again.",
+          status: 429,
+          retryAfter: result.retryAfter || 1
+        };
+      }
     }
+  }
+
+  if (!result.ok) {
 
     console.error("Discord guild verification failed:", {
       status: result.status,
