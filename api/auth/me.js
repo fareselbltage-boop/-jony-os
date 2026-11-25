@@ -42,8 +42,7 @@ async function refreshSession(refreshToken) {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
-    body: params,
-    signal: AbortSignal.timeout(8000)
+    body: params
   });
 
   const tokens = await response.json();
@@ -59,8 +58,7 @@ async function getDiscordUser(token) {
   const response = await fetch("https://discord.com/api/v10/users/@me", {
     headers: {
       Authorization: `Bearer ${token}`
-    },
-    signal: AbortSignal.timeout(8000)
+    }
   });
 
   if (!response.ok) return null;
