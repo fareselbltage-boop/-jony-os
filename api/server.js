@@ -3,10 +3,12 @@ import getDatabase from "./db.js";
 import { createHash } from "node:crypto";
 
 const userGuildCache = new Map();
-const USER_GUILD_CACHE_TTL = 5 * 60 * 1000;
+const USER_GUILD_CACHE_TTL = 15 * 60 * 1000;
+const USER_GUILD_STALE_TTL = 60 * 60 * 1000;
 
 const serverDataCache = new Map();
-const SERVER_DATA_CACHE_TTL = 5 * 60 * 1000;
+const SERVER_DATA_CACHE_TTL = 15 * 60 * 1000;
+const SERVER_DATA_STALE_TTL = 60 * 60 * 1000;
 
 function getCachedUserGuilds(userToken) {
   const cached = userGuildCache.get(userToken);
@@ -275,8 +277,11 @@ export default async function handler(req, res) {
 
     if (!cachedUserGuilds && userToken) {
       const tokenHash = createHash("sha256").update(userToken).digest("hex");
-      const stored = await authCache.findOne({ tokenHash, expiresAt: { $gt: new Date() } });
-      if (Array.isArray(stored?.guilds)) {
+      const stored = await authCache.findOne({ tokenHash });
+      const storedAge = stored?.updatedAt
+        ? Date.now() - new Date(stored.updatedAt).getTime()
+        : Infinity;
+      if (Array.isArray(stored?.guilds) && storedAge <= USER_GUILD_CACHE_TTL) {
         cachedUserGuilds = stored.guilds;
         setCachedUserGuilds(userToken, cachedUserGuilds);
       }
@@ -319,6 +324,19 @@ export default async function handler(req, res) {
       userGuildsResult = await fetchDiscord(guildsUrl, {
         Authorization: `Bearer ${userToken}`
       });
+    }
+
+    if (!userGuildsResult.ok && userGuildsResult.status === 429 && userToken) {
+      const tokenHash = createHash("sha256").update(userToken).digest("hex");
+      const staleAuth = await authCache.findOne({ tokenHash });
+      const staleAge = staleAuth?.updatedAt
+        ? Date.now() - new Date(staleAuth.updatedAt).getTime()
+        : Infinity;
+
+      if (Array.isArray(staleAuth?.guilds) && staleAge <= USER_GUILD_STALE_TTL) {
+        userGuildsResult = { ok: true, status: 200, data: staleAuth.guilds, cached: true };
+        cachedUserGuilds = staleAuth.guilds;
+      }
     }
 
     if (!userGuildsResult.ok) {
