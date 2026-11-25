@@ -1967,6 +1967,7 @@ export default function App() {
   };
 
   const loadGuildSettings = async serverId => {
+    setSettingsServerId(null);
     setSettingsLoading(true);
     setSettingsError("");
     setSettingsMessage("");
