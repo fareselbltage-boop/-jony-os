@@ -2,8 +2,8 @@
 import getDatabase from "./db.js";
 import { createHash } from "node:crypto";
 
-const SERVER_LIST_TTL = 5 * 60 * 1000;
-const SERVER_LIST_STALE_TTL = 10 * 60 * 1000;
+const SERVER_LIST_TTL = 15 * 60 * 1000;
+const SERVER_LIST_STALE_TTL = 60 * 60 * 1000;
 
 function getCookies(header = "") {
   const cookies = {};
