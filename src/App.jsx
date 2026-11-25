@@ -1724,6 +1724,7 @@ export default function App() {
   const [channelPage, setChannelPage] = useState(1);
 
   const [guildSettings, setGuildSettings] = useState(DEFAULT_SETTINGS);
+  const [settingsServerId, setSettingsServerId] = useState(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState("");
@@ -2025,6 +2026,7 @@ export default function App() {
           ...(saved.welcome || {})
         }
       });
+      setSettingsServerId(serverId);
     } catch (error) {
       setSettingsError(error.message || "Could not load settings");
     } finally {
@@ -2033,7 +2035,10 @@ export default function App() {
   };
 
   const saveGuildSettings = async settingsToSave => {
-    if (!selectedServer) return false;
+    if (!selectedServer || settingsServerId !== selectedServer.id || settingsLoading) {
+      setSettingsError("Wait until this server settings finish loading before saving.");
+      return false;
+    }
 
     setSettingsSaving(true);
     setSettingsError("");
@@ -2393,7 +2398,6 @@ export default function App() {
     setPage("Server Dashboard");
     setMenu(false);
 
-    setGuildSettings(DEFAULT_SETTINGS);
     loadGuildSettings(server.id);
 
     try {
